@@ -60,7 +60,11 @@ async def _handle_installation_event(
             await installation_service.handle_installation_suspended(installation_id)
             return
 
-        if action == "created" or action == "unsuspend":
+        if action == "unsuspend":
+            await installation_service.handle_installation_unsuspended(installation_id)
+            return
+
+        if action == "created":
             installation = Installation(
                 installation_id=installation_id,
                 account_login=installation_payload["account"]["login"],
@@ -68,10 +72,7 @@ async def _handle_installation_event(
                 status=TenantStatus.ACTIVE,
                 repository_selection=installation_payload["repository_selection"],
             )
-            if action == "created":
-                await installation_service.handle_installation_created(installation)
-            else:
-                await installation_service.handle_installation_unsuspended(installation)
+            await installation_service.handle_installation_created(installation)
             return
 
         logger.info("unhandled installation action acknowledged", extra={"action": action})
