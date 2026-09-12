@@ -45,6 +45,8 @@ Tables referenced by the design: `tenants`, `tenant_config` (window, default_tea
 - English only in all code (identifiers, comments, commit messages).
 - No comments in code unless they explain a genuinely non-obvious *why* (see global guidelines).
 - Configuration format is proposed in `README.md` as `mergency.yml` (rolling window, default team, budget thresholds) — subject to change, not yet implemented.
+- **Subagents (implementers, reviewers, any dispatched agent) must always report back in English**, regardless of the language the conversation with the human is happening in — include this explicitly in subagent prompts (e.g. "Report back in English").
+- **Documentation written going forward** (README, ADRs, plan files, this file, code comments where they're warranted) uses **English at a B2 level** — clear, plain sentences, avoid idiomatic/advanced constructions — **with emoji used to aid scannability** (section headers, status markers, callouts). This applies to new docs and to sections rewritten from now on; existing docs are not being retrofitted for this alone.
 
 ## Plans as code
 
