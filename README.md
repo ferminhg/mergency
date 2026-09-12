@@ -21,7 +21,7 @@ That's it for now. No blocking, no required checks, no gating, just visibility w
 
 ## What counts as an error (v1)
 
-- **Build failure on `main`** after merge (check run conclusion `failure` or `timed_out`).
+- **Build failure on** `main` after merge (check run conclusion `failure` or `timed_out`).
 - **Revert commits** (standard revert message pattern, or a commit explicitly referencing the PR it reverts).
 
 Flaky test detection and deploy-to-incident tracing are planned for later versions, see [Roadmap](#roadmap).
@@ -31,6 +31,8 @@ Flaky test detection and deploy-to-incident tracing are planned for later versio
 - No merge blocking or required checks based on budget status.
 - No individual author-level metrics, ever. Budgets are scoped to teams/CODEOWNERS, this is a team health signal, not a surveillance tool.
 - No automatic policy engine. That's coming, but it will be opt-in and configurable, never a default.
+
+
 
 ## Getting started
 
@@ -43,6 +45,8 @@ Planned setup:
 3. Set a default team as a fallback for paths with no CODEOWNERS match.
 4. Optionally override the rolling window (default: 28 days).
 
+
+
 ## Configuration
 
 ```yaml
@@ -52,6 +56,8 @@ default_team: platform-team
 budget:
   max_events_per_window: 5
 ```
+
+
 
 ## Roadmap
 
@@ -65,6 +71,8 @@ budget:
 - [ ] v2: flaky test signal
 - [ ] v2: deploy-to-incident traceability
 - [ ] v3: configurable consequence policy engine (opt-in)
+
+
 
 ## Contributing
 
