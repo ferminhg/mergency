@@ -49,14 +49,11 @@ make lint    # run the linter (ruff) inside the container
 
 ## Getting started
 
-> 🚧 Mergency is early stage. Installation instructions will land here once the GitHub App is published.
-
-Planned setup:
-
-1. Install the Mergency GitHub App on your organization or selected repos.
-2. Make sure your repo has a `CODEOWNERS` file (recommended, not required).
-3. Set a default team as a fallback for paths with no CODEOWNERS match.
-4. Optionally override the rolling window (default: 28 days).
+1. `docker compose build`
+2. Start a tunnel so GitHub can reach your local webhook endpoint, e.g. `ngrok http 8000` or `smee --url https://smee.io/<channel> --path /webhooks/github --port 8000`.
+3. Run `docker compose run --rm --service-ports app python scripts/github_app_manifest.py --hook-url <tunnel-url>/webhooks/github`, follow the browser flow, paste the printed values into `.env` (copy `.env.example` first).
+4. `docker compose up app`
+5. Install the GitHub App on a test org/repo from its GitHub settings page.
 
 
 
