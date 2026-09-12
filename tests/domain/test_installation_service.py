@@ -54,7 +54,7 @@ async def test_handle_installation_suspended_toggles_status(service, repository)
 
 async def test_handle_installation_unsuspended_reactivates(service, repository):
     await service.handle_installation_created(_installation(status=TenantStatus.SUSPENDED))
-    await service.handle_installation_unsuspended(_installation(status=TenantStatus.SUSPENDED))
+    await service.handle_installation_unsuspended(42)
 
     stored = await repository.get(42)
     assert stored is not None

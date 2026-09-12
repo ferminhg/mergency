@@ -14,14 +14,17 @@ class InMemoryTenantRepository:
         async with self._lock:
             self._installations[installation.installation_id] = installation
 
-    async def mark_deleted(self, installation_id: int) -> None:
-        async with self._lock:
-            existing = self._installations.get(installation_id)
-            if existing is not None:
-                self._installations[installation_id] = dataclasses.replace(
-                    existing, status=TenantStatus.DELETED
-                )
-
     async def get(self, installation_id: int) -> Installation | None:
         async with self._lock:
             return self._installations.get(installation_id)
+
+    async def transition(
+        self, installation_id: int, status: TenantStatus
+    ) -> Installation | None:
+        async with self._lock:
+            existing = self._installations.get(installation_id)
+            if existing is None:
+                return None
+            updated = dataclasses.replace(existing, status=status)
+            self._installations[installation_id] = updated
+            return updated
