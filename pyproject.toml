@@ -27,6 +27,17 @@ testpaths = ["tests"]
 line-length = 100
 target-version = "py312"
 
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
+ignore = [
+    # FastAPI's dependency injection relies on calling Depends()/Header() as
+    # an argument default; this is the framework's documented pattern, not a bug.
+    "B008",
+    # Line length is enforced by the formatter, not the linter; descriptive
+    # test names shouldn't be penalized for going over the limit.
+    "E501",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
