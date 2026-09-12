@@ -34,6 +34,19 @@ Flaky test detection and deploy-to-incident tracing are planned for later versio
 
 
 
+## Development
+
+Everything runs through Docker Compose — there's no bare-metal Python setup. A `Makefile` wraps the common commands:
+
+```bash
+make build   # build the app image
+make up      # start the app (FastAPI/uvicorn) on http://localhost:8000
+make down    # stop and remove containers
+make logs    # follow the app's logs
+make test    # run the test suite (pytest) inside the container
+make lint    # run the linter (ruff) inside the container
+```
+
 ## Getting started
 
 > 🚧 Mergency is early stage. Installation instructions will land here once the GitHub App is published.
