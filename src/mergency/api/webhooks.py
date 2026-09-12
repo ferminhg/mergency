@@ -47,28 +47,36 @@ async def _handle_installation_event(
     payload: dict, installation_service: InstallationService
 ) -> None:
     action = payload.get("action")
-    installation_payload = payload["installation"]
-    installation_id = installation_payload["id"]
 
-    if action == "deleted":
-        await installation_service.handle_installation_deleted(installation_id)
-        return
+    try:
+        installation_payload = payload["installation"]
+        installation_id = installation_payload["id"]
 
-    if action == "suspend":
-        await installation_service.handle_installation_suspended(installation_id)
-        return
+        if action == "deleted":
+            await installation_service.handle_installation_deleted(installation_id)
+            return
 
-    installation = Installation(
-        installation_id=installation_id,
-        account_login=installation_payload["account"]["login"],
-        account_type=installation_payload["account"]["type"],
-        status=TenantStatus.ACTIVE,
-        repository_selection=installation_payload["repository_selection"],
-    )
+        if action == "suspend":
+            await installation_service.handle_installation_suspended(installation_id)
+            return
 
-    if action == "created":
-        await installation_service.handle_installation_created(installation)
-    elif action == "unsuspend":
-        await installation_service.handle_installation_unsuspended(installation)
-    else:
+        if action == "created" or action == "unsuspend":
+            installation = Installation(
+                installation_id=installation_id,
+                account_login=installation_payload["account"]["login"],
+                account_type=installation_payload["account"]["type"],
+                status=TenantStatus.ACTIVE,
+                repository_selection=installation_payload["repository_selection"],
+            )
+            if action == "created":
+                await installation_service.handle_installation_created(installation)
+            else:
+                await installation_service.handle_installation_unsuspended(installation)
+            return
+
         logger.info("unhandled installation action acknowledged", extra={"action": action})
+    except KeyError as error:
+        logger.warning(
+            "installation payload missing expected field, acknowledged without processing",
+            extra={"action": action, "missing_field": str(error)},
+        )

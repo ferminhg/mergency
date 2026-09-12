@@ -100,3 +100,27 @@ async def test_installation_repositories_event_is_acknowledged(override_dependen
         response = await client.post("/webhooks/github", content=payload, headers=headers)
 
     assert response.status_code == 200
+
+
+async def test_unhandled_installation_action_is_acknowledged(override_dependencies):
+    payload = _installation_payload("new_permissions_accepted")
+    headers = _signed_headers(payload, "installation")
+
+    async with await _client() as client:
+        response = await client.post("/webhooks/github", content=payload, headers=headers)
+
+    assert response.status_code == 200
+    stored = await override_dependencies.get(1)
+    assert stored is None
+
+
+async def test_malformed_installation_payload_is_acknowledged_without_crashing(override_dependencies):
+    payload = json.dumps({"action": "created", "installation": {"id": 1}}).encode()
+    headers = _signed_headers(payload, "installation")
+
+    async with await _client() as client:
+        response = await client.post("/webhooks/github", content=payload, headers=headers)
+
+    assert response.status_code == 200
+    stored = await override_dependencies.get(1)
+    assert stored is None
