@@ -6,6 +6,8 @@ Usage:
 import argparse
 import json
 import secrets
+import sys
+import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, urlparse
@@ -76,8 +78,26 @@ class _CallbackHandler(BaseHTTPRequestHandler):
 
         if parsed.path == CALLBACK_PATH:
             query = parse_qs(parsed.query)
+            if query.get("state", [None])[0] != self.state:
+                self.send_response(400)
+                self.send_header("Content-Type", "text/plain")
+                self.end_headers()
+                self.wfile.write(b"State mismatch, aborting.")
+                _CallbackHandler.result = {}
+                return
+
             code = query["code"][0]
-            _CallbackHandler.result = _exchange_code(code)
+            try:
+                _CallbackHandler.result = _exchange_code(code)
+            except urllib.error.HTTPError as error:
+                self.send_response(502)
+                self.send_header("Content-Type", "text/plain")
+                self.end_headers()
+                self.wfile.write(b"GitHub rejected the manifest exchange, check your terminal.")
+                print(f"\nGitHub returned an error: {error.code} {error.read().decode()}")
+                _CallbackHandler.result = {}
+                return
+
             self.send_response(200)
             self.send_header("Content-Type", "text/plain")
             self.end_headers()
@@ -107,6 +127,9 @@ def main() -> None:
         server.handle_request()
 
     result = _CallbackHandler.result
+    if not result:
+        sys.exit(1)
+
     print("\nGitHub App created. Paste this into your .env:\n")
     print(f"MERGENCY_GITHUB_APP_ID={result['id']}")
     print(f"MERGENCY_GITHUB_WEBHOOK_SECRET={result['webhook_secret']}")
