@@ -7,21 +7,20 @@ from mergency.domain.installation_service import InstallationService
 from mergency.domain.ports.installation_token_provider import InstallationTokenProvider
 from mergency.domain.ports.tenant_repository import TenantRepository
 
-_tenant_repository: TenantRepository = InMemoryTenantRepository()
-_installation_service = InstallationService(_tenant_repository)
-
 
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
 
 
+@lru_cache
 def get_tenant_repository() -> TenantRepository:
-    return _tenant_repository
+    return InMemoryTenantRepository()
 
 
+@lru_cache
 def get_installation_service() -> InstallationService:
-    return _installation_service
+    return InstallationService(get_tenant_repository())
 
 
 @lru_cache
