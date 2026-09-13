@@ -23,3 +23,9 @@ accepted
   - Decide how `get_access_token` failures should surface (exception propagation vs. logged failure vs. retry), and implement that decision explicitly rather than relying on the current silent propagation.
   - Consider whether concurrent-miss duplicate fetches are still acceptable at that point, or whether a lock/de-dup is worth adding.
 - Any task that writes tests exercising `get_installation_token_provider()` and needs to vary `Settings` between cases must call `get_installation_token_provider.cache_clear()` (and likely `get_settings.cache_clear()`) between test cases, or restructure the fixture to avoid relying on the cached instance.
+
+## Update (partially implemented)
+
+Gap #1 (duplicate-fetch on concurrent cache misses) was closed in `docs/plan/0005-token-manager-concurrent-fetch-lock.md`, ahead of the originally planned trigger condition (the first real caller of `get_token()`) — see that plan's `## Context` for the rationale. `PyGithubInstallationTokenProvider` now holds a per-`installation_id` `asyncio.Lock` and re-checks the cache after acquiring it, so concurrent cache misses for the same installation collapse into a single `get_access_token` call instead of one per caller.
+
+Gaps #2 (no error handling around `get_access_token`) and #3 (the `@lru_cache` test-isolation caveat) are left open, unchanged from the original decision above: both still depend on context that doesn't exist yet (a real caller to decide failure-surfacing policy for #2; a test that actually varies `Settings` for #3), and closing them now would still mean guessing.
