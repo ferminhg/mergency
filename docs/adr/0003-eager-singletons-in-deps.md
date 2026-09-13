@@ -22,3 +22,7 @@ accepted
 - `deps.py` keeps its current mixed pattern (`get_settings` lazy + cached, `_tenant_repository`/`_installation_service` eager module globals) — no code change from this ADR.
 - This is an accepted, temporary inconsistency: the task that introduces the first adapter with real I/O in its constructor (most likely the Postgres-backed `TenantRepository`, or the PyGithub-backed `InstallationTokenProvider` from Task 6, if its constructor ever grows I/O) **must** switch `deps.py` to the `@lru_cache`-wrapped lazy pattern for every dependency, so construction happens on first use rather than at import time.
 - Until then, `deps.py`'s three dependency functions should be treated as "these will become `@lru_cache`d lazily-constructed singletons soon" rather than a settled design.
+
+## Update (implemented)
+
+The lazy `@lru_cache` pattern described above was implemented in `docs/plan/0004-lazy-deps-singletons.md`, ahead of the originally planned trigger condition (a real I/O-performing adapter) — see that plan's `## Context` for the rationale. `get_tenant_repository` and `get_installation_service` in `src/mergency/api/deps.py` are now `@lru_cache`-wrapped functions, matching `get_settings` and `get_installation_token_provider`; the eager module-level globals `_tenant_repository`/`_installation_service` were removed.
