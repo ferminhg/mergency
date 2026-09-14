@@ -65,6 +65,10 @@ async def test_ignores_check_run_on_feature_branch(classifier):
     assert await classifier.classify(_check_run_signal(head_branch="feature-x")) is None
 
 
+async def test_ignores_completed_check_run_with_null_completed_at(classifier):
+    assert await classifier.classify(_check_run_signal(completed_at=None)) is None
+
+
 async def test_classifies_revert_push_on_default_branch(classifier):
     event = await classifier.classify(_push_signal())
 

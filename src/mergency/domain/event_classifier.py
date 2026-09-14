@@ -21,6 +21,8 @@ class EventClassifier:
                 event = self._classify_check_run(signal)
             case PushSignal():
                 event = self._classify_push(signal)
+            case _:
+                raise TypeError(f"unsupported signal type: {type(signal)!r}")
 
         if event is None:
             return None
@@ -34,6 +36,8 @@ class EventClassifier:
         if signal.conclusion not in _QUALIFYING_CONCLUSIONS:
             return None
         if signal.head_branch != signal.default_branch:
+            return None
+        if signal.completed_at is None:
             return None
         return Event(
             installation_id=signal.installation_id,
@@ -61,5 +65,5 @@ class EventClassifier:
 
 
 def _looks_like_revert(message: str) -> bool:
-    first_line = message.splitlines()[0]
+    first_line = message.splitlines()[0] if message else ""
     return bool(_REVERT_SUBJECT_PATTERN.match(first_line)) or _REVERT_MENTION in message.lower()
