@@ -1,13 +1,15 @@
 from functools import lru_cache
 
+from mergency.adapters.db.engine import build_engine
+from mergency.adapters.db.event_repository import SqlAlchemyEventRepository
+from mergency.adapters.db.tenant_config_repository import SqlAlchemyTenantConfigRepository
 from mergency.adapters.github.changed_files_provider import GithubChangedFilesProvider
 from mergency.adapters.github.codeowners_provider import GithubCodeownersProvider
 from mergency.adapters.github.repository_content_provider import GithubRepositoryContentProvider
 from mergency.adapters.github.token_manager import PyGithubInstallationTokenProvider
-from mergency.adapters.memory.event_repository import InMemoryEventRepository
-from mergency.adapters.memory.tenant_config_repository import InMemoryTenantConfigRepository
 from mergency.adapters.memory.tenant_repository import InMemoryTenantRepository
 from mergency.api.settings import Settings
+from mergency.domain.budget_calculator import BudgetCalculator
 from mergency.domain.config_resolver import ConfigResolver
 from mergency.domain.event_classifier import EventClassifier
 from mergency.domain.installation_service import InstallationService
@@ -46,8 +48,13 @@ def get_installation_token_provider() -> InstallationTokenProvider:
 
 
 @lru_cache
+def get_db_engine():
+    return build_engine(get_settings().database_url)
+
+
+@lru_cache
 def get_event_repository() -> EventRepository:
-    return InMemoryEventRepository()
+    return SqlAlchemyEventRepository(get_db_engine())
 
 
 @lru_cache
@@ -57,7 +64,7 @@ def get_event_classifier() -> EventClassifier:
 
 @lru_cache
 def get_tenant_config_repository() -> TenantConfigRepository:
-    return InMemoryTenantConfigRepository()
+    return SqlAlchemyTenantConfigRepository(get_db_engine())
 
 
 @lru_cache
@@ -85,6 +92,11 @@ def get_ownership_resolver() -> OwnershipResolver:
     return OwnershipResolver(get_codeowners_provider())
 
 
+@lru_cache
+def get_budget_calculator() -> BudgetCalculator:
+    return BudgetCalculator(get_event_repository(), get_tenant_config_repository())
+
+
 def reset_dependency_caches() -> None:
     get_settings.cache_clear()
     get_tenant_repository.cache_clear()
@@ -98,3 +110,5 @@ def reset_dependency_caches() -> None:
     get_changed_files_provider.cache_clear()
     get_config_resolver.cache_clear()
     get_ownership_resolver.cache_clear()
+    get_db_engine.cache_clear()
+    get_budget_calculator.cache_clear()
