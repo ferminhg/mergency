@@ -1,9 +1,12 @@
 from functools import lru_cache
 
 from mergency.adapters.github.token_manager import PyGithubInstallationTokenProvider
+from mergency.adapters.memory.event_repository import InMemoryEventRepository
 from mergency.adapters.memory.tenant_repository import InMemoryTenantRepository
 from mergency.api.settings import Settings
+from mergency.domain.event_classifier import EventClassifier
 from mergency.domain.installation_service import InstallationService
+from mergency.domain.ports.event_repository import EventRepository
 from mergency.domain.ports.installation_token_provider import InstallationTokenProvider
 from mergency.domain.ports.tenant_repository import TenantRepository
 
@@ -32,8 +35,20 @@ def get_installation_token_provider() -> InstallationTokenProvider:
     )
 
 
+@lru_cache
+def get_event_repository() -> EventRepository:
+    return InMemoryEventRepository()
+
+
+@lru_cache
+def get_event_classifier() -> EventClassifier:
+    return EventClassifier(get_event_repository())
+
+
 def reset_dependency_caches() -> None:
     get_settings.cache_clear()
     get_tenant_repository.cache_clear()
     get_installation_service.cache_clear()
     get_installation_token_provider.cache_clear()
+    get_event_repository.cache_clear()
+    get_event_classifier.cache_clear()
