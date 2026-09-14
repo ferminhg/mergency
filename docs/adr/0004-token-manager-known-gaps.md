@@ -32,4 +32,6 @@ Gaps #2 (no error handling around `get_access_token`) and #3 (the `@lru_cache` t
 
 Gap #2 was later narrowed in `docs/plan/0006-token-manager-error-wrapping.md`: `get_token()` now wraps any failure from `get_access_token()` in a stable `TokenFetchError` (`domain/errors/token_fetch_error.py`) instead of letting a raw PyGithub exception cross the port boundary. This closes only the "don't leak an adapter-specific exception type" part of the gap. The actual failure-surfacing policy (propagate vs. log vs. retry) is still deferred to the first real caller of `get_token()`, exactly as originally decided — `TokenFetchError` is designed so that decision can be made later without another change to `token_manager.py`.
 
-Gap #3 remains fully open.
+Gap #3 was closed in `docs/plan/0007-token-manager-settings-cache-isolation.md`: `deps.py` gained a `reset_dependency_caches()` function clearing all four `@lru_cache`d singletons (`get_settings`, `get_tenant_repository`, `get_installation_service`, `get_installation_token_provider`), and `tests/conftest.py` now calls it in an autouse fixture after every test. This removes the caveat for the whole test suite going forward, rather than requiring each test author to remember `.cache_clear()` individually — unlike gap #2's remaining half, this didn't depend on a real caller existing.
+
+Gap #2's failure-surfacing policy (propagate vs. log vs. retry) remains the only open item, still deferred to the first real caller of `get_token()`.
