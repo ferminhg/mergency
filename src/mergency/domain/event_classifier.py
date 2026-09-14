@@ -4,7 +4,6 @@ from mergency.domain.models.check_run_signal import CheckRunSignal
 from mergency.domain.models.event import Event
 from mergency.domain.models.event_type import EventType
 from mergency.domain.models.push_signal import PushSignal
-from mergency.domain.ports.event_repository import EventRepository
 
 _QUALIFYING_CONCLUSIONS = {"failure", "timed_out"}
 _REVERT_SUBJECT_PATTERN = re.compile(r'^Revert "')
@@ -12,23 +11,14 @@ _REVERT_MENTION = "this reverts commit"
 
 
 class EventClassifier:
-    def __init__(self, event_repository: EventRepository) -> None:
-        self._event_repository = event_repository
-
     async def classify(self, signal: CheckRunSignal | PushSignal) -> Event | None:
         match signal:
             case CheckRunSignal():
-                event = self._classify_check_run(signal)
+                return self._classify_check_run(signal)
             case PushSignal():
-                event = self._classify_push(signal)
+                return self._classify_push(signal)
             case _:
                 raise TypeError(f"unsupported signal type: {type(signal)!r}")
-
-        if event is None:
-            return None
-
-        saved = await self._event_repository.save_if_new(event)
-        return event if saved else None
 
     def _classify_check_run(self, signal: CheckRunSignal) -> Event | None:
         if signal.action != "completed":

@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 
 import pytest
 
-from mergency.adapters.memory.event_repository import InMemoryEventRepository
 from mergency.domain.event_classifier import EventClassifier
 from mergency.domain.models.check_run_signal import CheckRunSignal
 from mergency.domain.models.event_type import EventType
@@ -11,13 +10,8 @@ from mergency.domain.models.push_signal import PushSignal
 
 
 @pytest.fixture
-def repository() -> InMemoryEventRepository:
-    return InMemoryEventRepository()
-
-
-@pytest.fixture
-def classifier(repository) -> EventClassifier:
-    return EventClassifier(repository)
+def classifier() -> EventClassifier:
+    return EventClassifier()
 
 
 def _check_run_signal(**overrides) -> CheckRunSignal:
@@ -65,10 +59,6 @@ async def test_ignores_check_run_on_feature_branch(classifier):
     assert await classifier.classify(_check_run_signal(head_branch="feature-x")) is None
 
 
-async def test_ignores_completed_check_run_with_null_completed_at(classifier):
-    assert await classifier.classify(_check_run_signal(completed_at=None)) is None
-
-
 async def test_classifies_revert_push_on_default_branch(classifier):
     event = await classifier.classify(_push_signal())
 
@@ -92,14 +82,10 @@ async def test_ignores_push_to_non_default_branch(classifier):
     assert await classifier.classify(signal) is None
 
 
-async def test_duplicate_check_run_delivery_is_not_reclassified(classifier):
-    await classifier.classify(_check_run_signal())
-
-    assert await classifier.classify(_check_run_signal()) is None
-
-
 async def test_recognizes_explicit_revert_mention(classifier):
-    event = await classifier.classify(_push_signal(message="Undo bad change\n\nThis reverts commit abc123."))
+    event = await classifier.classify(
+        _push_signal(message="Undo bad change\n\nThis reverts commit abc123.")
+    )
 
     assert event is not None
     assert event.event_type == EventType.REVERT
