@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from mergency.adapters.memory.event_repository import InMemoryEventRepository
 from mergency.domain.models.event import Event
@@ -70,3 +70,58 @@ async def test_get_returns_none_when_absent():
         await repository.get(1, "acme/widgets", "missing", EventType.BUILD_FAILURE, "@org/team-a")
         is None
     )
+
+
+async def test_count_since_counts_matching_owner_and_type_within_window():
+    repository = InMemoryEventRepository()
+    await repository.save_if_new(_event(owner="@org/team-a"))
+
+    count = await repository.count_since(
+        1,
+        "@org/team-a",
+        [EventType.BUILD_FAILURE, EventType.REVERT],
+        datetime.now(timezone.utc) - timedelta(days=1),
+    )
+
+    assert count == 1
+
+
+async def test_count_since_excludes_events_outside_the_window():
+    old_event = Event(
+        installation_id=1,
+        repo="acme/widgets",
+        sha="old-sha",
+        event_type=EventType.BUILD_FAILURE,
+        owner="@org/team-a",
+        ts=datetime.now(timezone.utc) - timedelta(days=100),
+    )
+    repository = InMemoryEventRepository()
+    await repository.save_if_new(old_event)
+
+    count = await repository.count_since(
+        1, "@org/team-a", [EventType.BUILD_FAILURE], datetime.now(timezone.utc) - timedelta(days=28)
+    )
+
+    assert count == 0
+
+
+async def test_count_since_excludes_event_types_not_in_the_allow_list():
+    repository = InMemoryEventRepository()
+    await repository.save_if_new(_event(owner="@org/team-a"))
+
+    count = await repository.count_since(
+        1, "@org/team-a", [EventType.REVERT], datetime.now(timezone.utc) - timedelta(days=1)
+    )
+
+    assert count == 0
+
+
+async def test_count_since_excludes_other_owners():
+    repository = InMemoryEventRepository()
+    await repository.save_if_new(_event(owner="@org/team-a"))
+
+    count = await repository.count_since(
+        1, "@org/team-b", [EventType.BUILD_FAILURE], datetime.now(timezone.utc) - timedelta(days=1)
+    )
+
+    assert count == 0
