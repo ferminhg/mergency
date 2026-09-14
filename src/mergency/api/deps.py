@@ -30,3 +30,10 @@ def get_installation_token_provider() -> InstallationTokenProvider:
         app_id=settings.github_app_id,
         private_key=settings.github_private_key,
     )
+
+
+def reset_dependency_caches() -> None:
+    get_settings.cache_clear()
+    get_tenant_repository.cache_clear()
+    get_installation_service.cache_clear()
+    get_installation_token_provider.cache_clear()
