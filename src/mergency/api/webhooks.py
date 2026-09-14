@@ -8,6 +8,7 @@ from mergency.adapters.github.signature import verify_signature
 from mergency.api.deps import get_installation_service, get_settings
 from mergency.api.settings import Settings
 from mergency.domain.installation_service import InstallationService
+from mergency.worker.classify_activity_event import classify_activity_event
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,8 @@ async def receive_webhook(
         await _handle_installation_event(payload, installation_service)
     elif x_github_event == "installation_repositories":
         logger.info("installation_repositories event acknowledged, no-op for now")
+    elif x_github_event in ("push", "check_run"):
+        classify_activity_event.delay(x_github_event, payload)
     else:
         logger.info(
             "event acknowledged, processing not yet implemented",
