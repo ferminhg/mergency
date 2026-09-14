@@ -46,3 +46,25 @@ def test_get_event_classifier_is_cached_and_resettable():
     deps.reset_dependency_caches()
 
     assert deps.get_event_classifier() is not first
+
+
+def test_ownership_resolution_dependencies_are_cached_and_resettable(monkeypatch):
+    _set_required_env(monkeypatch, "test-app-id")
+    factories = [
+        deps.get_tenant_config_repository,
+        deps.get_repository_content_provider,
+        deps.get_codeowners_provider,
+        deps.get_changed_files_provider,
+        deps.get_config_resolver,
+        deps.get_ownership_resolver,
+    ]
+    first_instances = [factory() for factory in factories]
+
+    assert [factory() for factory in factories] == first_instances
+
+    deps.reset_dependency_caches()
+
+    assert all(
+        factory() is not first
+        for factory, first in zip(factories, first_instances, strict=True)
+    )

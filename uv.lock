@@ -346,6 +346,15 @@ wheels = [
 ]
 
 [[package]]
+name = "codeowners"
+version = "0.9.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/9d/da/494da11868328ada7260dfae6e535cf19b1117b05882626f4ecac8d5824f/codeowners-0.9.0.tar.gz", hash = "sha256:afa952d236c3c998b10ffddb5f92564becb27bd83cd3ce98f4566e83aa958e3c", size = 41352, upload-time = "2026-06-28T15:09:10.816Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/de/c9/6f8ac752fa58998a28d0f84bc0d0048cba1c6153bee61839f0ee1aa0588b/codeowners-0.9.0-py3-none-any.whl", hash = "sha256:28910812aeb60606c789a0dac7becdb39d7426719df4886a2ce11c9f3bab4360", size = 8826, upload-time = "2026-06-28T15:09:09.73Z" },
+]
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -532,9 +541,11 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "celery" },
+    { name = "codeowners" },
     { name = "fastapi" },
     { name = "pydantic-settings" },
     { name = "pygithub" },
+    { name = "pyyaml" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -549,9 +560,11 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "celery", specifier = ">=5.4" },
+    { name = "codeowners", specifier = ">=0.9" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "pydantic-settings", specifier = ">=2.5" },
     { name = "pygithub", specifier = ">=2.4" },
+    { name = "pyyaml", specifier = ">=6.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
 ]
 
