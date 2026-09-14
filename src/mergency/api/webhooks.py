@@ -3,12 +3,11 @@ import logging
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 
+from mergency.adapters.github.installation_command_parser import parse_installation_command
 from mergency.adapters.github.signature import verify_signature
 from mergency.api.deps import get_installation_service, get_settings
 from mergency.api.settings import Settings
 from mergency.domain.installation_service import InstallationService
-from mergency.domain.models.installation import Installation
-from mergency.domain.models.tenant_status import TenantStatus
 
 logger = logging.getLogger(__name__)
 
@@ -49,35 +48,16 @@ async def _handle_installation_event(
     action = payload.get("action")
 
     try:
-        installation_payload = payload["installation"]
-        installation_id = installation_payload["id"]
-
-        if action == "deleted":
-            await installation_service.handle_installation_deleted(installation_id)
-            return
-
-        if action == "suspend":
-            await installation_service.handle_installation_suspended(installation_id)
-            return
-
-        if action == "unsuspend":
-            await installation_service.handle_installation_unsuspended(installation_id)
-            return
-
-        if action == "created":
-            installation = Installation(
-                installation_id=installation_id,
-                account_login=installation_payload["account"]["login"],
-                account_type=installation_payload["account"]["type"],
-                status=TenantStatus.ACTIVE,
-                repository_selection=installation_payload["repository_selection"],
-            )
-            await installation_service.handle_installation_created(installation)
-            return
-
-        logger.info("unhandled installation action acknowledged", extra={"action": action})
+        command = parse_installation_command(payload)
     except KeyError as error:
         logger.warning(
             "installation payload missing expected field, acknowledged without processing",
             extra={"action": action, "missing_field": str(error)},
         )
+        return
+
+    if command is None:
+        logger.info("unhandled installation action acknowledged", extra={"action": action})
+        return
+
+    await installation_service.handle(command)
