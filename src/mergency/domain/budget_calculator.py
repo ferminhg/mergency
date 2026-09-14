@@ -5,7 +5,7 @@ from mergency.domain.models.event_type import EventType
 from mergency.domain.ports.event_repository import EventRepository
 from mergency.domain.ports.tenant_config_repository import TenantConfigRepository
 
-_COUNTED_EVENT_TYPES = [EventType.BUILD_FAILURE, EventType.REVERT]
+_COUNTED_EVENT_TYPES = (EventType.BUILD_FAILURE, EventType.REVERT)
 _FALLBACK_ROLLING_WINDOW_DAYS = 28
 _FALLBACK_MAX_EVENTS_PER_WINDOW = 5
 
