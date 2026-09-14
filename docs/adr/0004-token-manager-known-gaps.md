@@ -29,3 +29,7 @@ accepted
 Gap #1 (duplicate-fetch on concurrent cache misses) was closed in `docs/plan/0005-token-manager-concurrent-fetch-lock.md`, ahead of the originally planned trigger condition (the first real caller of `get_token()`) — see that plan's `## Context` for the rationale. `PyGithubInstallationTokenProvider` now holds a per-`installation_id` `asyncio.Lock` and re-checks the cache after acquiring it, so concurrent cache misses for the same installation collapse into a single `get_access_token` call instead of one per caller.
 
 Gaps #2 (no error handling around `get_access_token`) and #3 (the `@lru_cache` test-isolation caveat) are left open, unchanged from the original decision above: both still depend on context that doesn't exist yet (a real caller to decide failure-surfacing policy for #2; a test that actually varies `Settings` for #3), and closing them now would still mean guessing.
+
+Gap #2 was later narrowed in `docs/plan/0006-token-manager-error-wrapping.md`: `get_token()` now wraps any failure from `get_access_token()` in a stable `TokenFetchError` (`domain/errors/token_fetch_error.py`) instead of letting a raw PyGithub exception cross the port boundary. This closes only the "don't leak an adapter-specific exception type" part of the gap. The actual failure-surfacing policy (propagate vs. log vs. retry) is still deferred to the first real caller of `get_token()`, exactly as originally decided — `TokenFetchError` is designed so that decision can be made later without another change to `token_manager.py`.
+
+Gap #3 remains fully open.
