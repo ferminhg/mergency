@@ -13,7 +13,8 @@ class _StubContentProvider:
 async def test_resolves_config_from_valid_yaml():
     resolver = ConfigResolver(
         _StubContentProvider(
-            "rolling_window_days: 14\ndefault_team: platform-team\nbudget:\n  max_events_per_window: 3\n"
+            "rolling_window_days: 14\ndefault_team: platform-team\n"
+            "budget:\n  max_events_per_window: 3\n  warn_threshold_pct: 40\n"
         ),
         InMemoryTenantConfigRepository(),
     )
@@ -24,6 +25,7 @@ async def test_resolves_config_from_valid_yaml():
     assert config.rolling_window_days == 14
     assert config.default_team == "platform-team"
     assert config.max_events_per_window == 3
+    assert config.warn_threshold_pct == 40
 
 
 async def test_falls_back_to_defaults_when_file_is_absent():
@@ -34,6 +36,7 @@ async def test_falls_back_to_defaults_when_file_is_absent():
     assert config.rolling_window_days == 28
     assert config.default_team == "unassigned"
     assert config.max_events_per_window == 5
+    assert config.warn_threshold_pct == 50
 
 
 async def test_falls_back_to_defaults_when_yaml_is_invalid():
@@ -44,6 +47,7 @@ async def test_falls_back_to_defaults_when_yaml_is_invalid():
     config = await resolver.resolve(1, "acme/widgets")
 
     assert config.default_team == "unassigned"
+    assert config.warn_threshold_pct == 50
 
 
 async def test_missing_budget_section_uses_default_max_events():
@@ -54,6 +58,19 @@ async def test_missing_budget_section_uses_default_max_events():
 
     config = await resolver.resolve(1, "acme/widgets")
 
+    assert config.max_events_per_window == 5
+    assert config.warn_threshold_pct == 50
+
+
+async def test_warn_threshold_pct_alone_overrides_only_itself():
+    resolver = ConfigResolver(
+        _StubContentProvider("budget:\n  warn_threshold_pct: 25\n"),
+        InMemoryTenantConfigRepository(),
+    )
+
+    config = await resolver.resolve(1, "acme/widgets")
+
+    assert config.warn_threshold_pct == 25
     assert config.max_events_per_window == 5
 
 

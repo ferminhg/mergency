@@ -65,6 +65,7 @@ rolling_window_days: 28
 default_team: platform-team
 budget:
   max_events_per_window: 5
+  warn_threshold_pct: 50
 ```
 
 

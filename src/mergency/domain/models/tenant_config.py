@@ -7,3 +7,4 @@ class TenantConfig:
     rolling_window_days: int
     default_team: str
     max_events_per_window: int
+    warn_threshold_pct: int
