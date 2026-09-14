@@ -52,3 +52,10 @@ def test_unknown_event_type_is_dropped_without_error(monkeypatch):
 
 def test_malformed_payload_is_dropped_without_error():
     task_module.classify_activity_event("check_run", {"action": "completed"})
+
+
+def test_malformed_timestamp_is_dropped_without_error():
+    payload = _check_run_payload()
+    payload["check_run"]["completed_at"] = "not-a-date"
+
+    task_module.classify_activity_event("check_run", payload)

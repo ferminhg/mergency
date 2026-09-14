@@ -23,10 +23,10 @@ def classify_activity_event(event_type: str, payload: dict) -> None:
 
     try:
         signal = parser(payload)
-    except KeyError as error:
+    except (KeyError, ValueError, TypeError) as error:
         logger.warning(
-            "activity payload missing expected field, dropped",
-            extra={"event_type": event_type, "missing_field": str(error)},
+            "activity payload could not be parsed, dropped",
+            extra={"event_type": event_type, "error": str(error)},
         )
         return
 
