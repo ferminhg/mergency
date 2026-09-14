@@ -64,4 +64,7 @@ def test_ownership_resolution_dependencies_are_cached_and_resettable(monkeypatch
 
     deps.reset_dependency_caches()
 
-    assert all(factory() is not first for factory, first in zip(factories, first_instances))
+    assert all(
+        factory() is not first
+        for factory, first in zip(factories, first_instances, strict=True)
+    )
