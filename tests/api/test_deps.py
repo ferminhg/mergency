@@ -35,3 +35,14 @@ def test_get_installation_token_provider_rebuilds_from_current_settings_after_ca
     deps.get_installation_token_provider()
 
     assert captured_app_ids == ["first-app-id", "second-app-id"]
+
+
+def test_get_event_classifier_is_cached_and_resettable():
+    from mergency.api import deps
+
+    first = deps.get_event_classifier()
+    assert deps.get_event_classifier() is first
+
+    deps.reset_dependency_caches()
+
+    assert deps.get_event_classifier() is not first

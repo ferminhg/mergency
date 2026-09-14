@@ -83,13 +83,45 @@ async def test_invalid_signature_is_rejected(override_dependencies):
 
 
 async def test_unhandled_event_type_is_acknowledged(override_dependencies):
-    payload = json.dumps({"zen": "hello"}).encode()
+    payload = json.dumps({"action": "opened"}).encode()
+    headers = _signed_headers(payload, "pull_request")
+
+    async with await _client() as client:
+        response = await client.post("/webhooks/github", content=payload, headers=headers)
+
+    assert response.status_code == 200
+
+
+async def test_check_run_event_enqueues_classify_activity_event(override_dependencies, monkeypatch):
+    from mergency.api import webhooks
+
+    calls = []
+    monkeypatch.setattr(webhooks.classify_activity_event, "delay", lambda *a: calls.append(a))
+
+    payload = json.dumps({"action": "completed", "check_run": {}}).encode()
+    headers = _signed_headers(payload, "check_run")
+
+    async with await _client() as client:
+        response = await client.post("/webhooks/github", content=payload, headers=headers)
+
+    assert response.status_code == 200
+    assert calls == [("check_run", {"action": "completed", "check_run": {}})]
+
+
+async def test_push_event_enqueues_classify_activity_event(override_dependencies, monkeypatch):
+    from mergency.api import webhooks
+
+    calls = []
+    monkeypatch.setattr(webhooks.classify_activity_event, "delay", lambda *a: calls.append(a))
+
+    payload = json.dumps({"ref": "refs/heads/main"}).encode()
     headers = _signed_headers(payload, "push")
 
     async with await _client() as client:
         response = await client.post("/webhooks/github", content=payload, headers=headers)
 
     assert response.status_code == 200
+    assert calls == [("push", {"ref": "refs/heads/main"})]
 
 
 async def test_installation_repositories_event_is_acknowledged(override_dependencies):
