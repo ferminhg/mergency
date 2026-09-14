@@ -3,6 +3,8 @@ from datetime import datetime, timedelta, timezone
 
 from github import GithubIntegration
 
+from mergency.domain.errors.token_fetch_error import TokenFetchError
+
 
 class PyGithubInstallationTokenProvider:
     def __init__(self, app_id: str, private_key: str, ttl_skew_seconds: int = 60) -> None:
@@ -22,7 +24,10 @@ class PyGithubInstallationTokenProvider:
             if fresh is not None:
                 return fresh
 
-            auth = await asyncio.to_thread(self._integration.get_access_token, installation_id)
+            try:
+                auth = await asyncio.to_thread(self._integration.get_access_token, installation_id)
+            except Exception as err:
+                raise TokenFetchError(installation_id, err) from err
             self._cache[installation_id] = (auth.token, auth.expires_at)
             return auth.token
 

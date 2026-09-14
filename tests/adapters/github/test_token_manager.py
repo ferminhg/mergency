@@ -2,7 +2,10 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
+import pytest
+
 from mergency.adapters.github.token_manager import PyGithubInstallationTokenProvider
+from mergency.domain.errors.token_fetch_error import TokenFetchError
 
 
 def _make_auth(token: str, expires_in_seconds: int = 3600) -> MagicMock:
@@ -69,4 +72,30 @@ async def test_concurrent_cache_misses_for_different_installations_fetch_indepen
 
     assert token_1 == "token-for-1"
     assert token_2 == "token-for-2"
+    assert provider._integration.get_access_token.call_count == 2
+
+
+async def test_get_token_wraps_get_access_token_failures():
+    provider = _make_provider()
+    cause = RuntimeError("503 from GitHub")
+    provider._integration.get_access_token = MagicMock(side_effect=cause)
+
+    with pytest.raises(TokenFetchError) as exc_info:
+        await provider.get_token(42)
+
+    assert exc_info.value.installation_id == 42
+    assert exc_info.value.__cause__ is cause
+
+
+async def test_get_token_releases_the_lock_after_a_failed_fetch():
+    provider = _make_provider()
+    provider._integration.get_access_token = MagicMock(
+        side_effect=[RuntimeError("503 from GitHub"), _make_auth("recovered-token")]
+    )
+
+    with pytest.raises(TokenFetchError):
+        await provider.get_token(1)
+    token = await provider.get_token(1)
+
+    assert token == "recovered-token"
     assert provider._integration.get_access_token.call_count == 2
