@@ -72,3 +72,23 @@ async def test_recreating_an_existing_installation_updates_rather_than_duplicate
     stored = await repository.get(42)
     assert stored is not None
     assert stored.installation_id == 42
+
+
+async def test_handle_transition_on_unknown_installation_logs_warning(service, caplog):
+    with caplog.at_level("WARNING"):
+        await service.handle(TransitionInstallation(installation_id=999, status=TenantStatus.SUSPENDED))
+
+    assert len(caplog.records) == 1
+    record = caplog.records[0]
+    assert record.levelname == "WARNING"
+    assert record.installation_id == 999
+    assert record.status == "suspended"
+
+
+async def test_handle_transition_on_known_installation_does_not_log(service, repository, caplog):
+    await service.handle(CreateInstallation(installation=_installation()))
+
+    with caplog.at_level("WARNING"):
+        await service.handle(TransitionInstallation(installation_id=42, status=TenantStatus.SUSPENDED))
+
+    assert caplog.records == []
