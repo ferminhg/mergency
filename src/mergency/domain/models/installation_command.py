@@ -1,0 +1,4 @@
+from mergency.domain.models.create_installation_command import CreateInstallation
+from mergency.domain.models.transition_installation_command import TransitionInstallation
+
+InstallationCommand = CreateInstallation | TransitionInstallation
