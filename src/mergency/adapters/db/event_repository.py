@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import asyncpg
 import sqlalchemy as sa
 from sqlalchemy import insert, select
 from sqlalchemy.exc import IntegrityError
@@ -27,8 +28,10 @@ class SqlAlchemyEventRepository:
                         ts=event.ts,
                     )
                 )
-        except IntegrityError:
-            return False
+        except IntegrityError as error:
+            if isinstance(error.orig.__cause__, asyncpg.exceptions.UniqueViolationError):
+                return False
+            raise
         return True
 
     async def get(

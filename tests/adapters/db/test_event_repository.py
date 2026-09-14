@@ -1,5 +1,8 @@
 from datetime import datetime, timedelta, timezone
 
+import pytest
+from sqlalchemy.exc import IntegrityError
+
 from mergency.adapters.db.event_repository import SqlAlchemyEventRepository
 from mergency.domain.models.event import Event
 from mergency.domain.models.event_type import EventType
@@ -43,6 +46,14 @@ async def test_same_raw_event_with_a_different_owner_is_a_distinct_row(db_engine
     saved = await repository.save_if_new(_event(owner="@org/team-b"))
 
     assert saved is True
+
+
+async def test_save_if_new_reraises_on_not_null_violation(db_engine):
+    repository = SqlAlchemyEventRepository(db_engine)
+    event_with_no_owner = _event(owner=None)
+
+    with pytest.raises(IntegrityError):
+        await repository.save_if_new(event_with_no_owner)
 
 
 async def test_get_returns_none_when_absent(db_engine):
