@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 
@@ -7,3 +7,4 @@ class PushCommit:
     sha: str
     message: str
     timestamp: datetime
+    files: list[str] = field(default_factory=list)

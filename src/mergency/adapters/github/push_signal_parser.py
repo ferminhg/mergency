@@ -11,6 +11,11 @@ def parse_push_signal(payload: dict) -> PushSignal:
             sha=commit["id"],
             message=commit["message"],
             timestamp=datetime.fromisoformat(commit["timestamp"]),
+            files=[
+                *commit.get("added", []),
+                *commit.get("removed", []),
+                *commit.get("modified", []),
+            ],
         )
         for commit in payload["commits"]
     ]
