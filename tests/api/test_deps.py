@@ -68,3 +68,28 @@ def test_ownership_resolution_dependencies_are_cached_and_resettable(monkeypatch
         factory() is not first
         for factory, first in zip(factories, first_instances, strict=True)
     )
+
+
+def test_get_budget_calculator_is_cached_and_resettable():
+    from mergency.api import deps
+
+    first = deps.get_budget_calculator()
+    assert deps.get_budget_calculator() is first
+
+    deps.reset_dependency_caches()
+
+    assert deps.get_budget_calculator() is not first
+
+
+def test_event_repository_is_sqlalchemy_backed():
+    from mergency.adapters.db.event_repository import SqlAlchemyEventRepository
+    from mergency.api import deps
+
+    assert isinstance(deps.get_event_repository(), SqlAlchemyEventRepository)
+
+
+def test_tenant_config_repository_is_sqlalchemy_backed():
+    from mergency.adapters.db.tenant_config_repository import SqlAlchemyTenantConfigRepository
+    from mergency.api import deps
+
+    assert isinstance(deps.get_tenant_config_repository(), SqlAlchemyTenantConfigRepository)

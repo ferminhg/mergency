@@ -8,6 +8,7 @@ def _config(installation_id: int = 1, default_team: str = "team-a") -> TenantCon
         rolling_window_days=28,
         default_team=default_team,
         max_events_per_window=5,
+        warn_threshold_pct=50,
     )
 
 

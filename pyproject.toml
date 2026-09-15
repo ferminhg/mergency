@@ -11,6 +11,9 @@ dependencies = [
     "uvicorn[standard]>=0.32",
     "pyyaml>=6.0",
     "codeowners>=0.9",
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg>=0.29",
+    "alembic>=1.13",
 ]
 
 [dependency-groups]

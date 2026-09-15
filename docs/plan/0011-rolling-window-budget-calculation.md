@@ -10,7 +10,12 @@
 
 ## Status
 
-proposed
+implemented
+
+**Implementation note (added after all 10 tasks landed):** three refinements surfaced during code review that this plan's original task text didn't anticipate, each fixed in its own commit rather than folded silently into the task that introduced the issue:
+- `SqlAlchemyEventRepository.save_if_new` (Task 7) initially caught `IntegrityError` too broadly, which would have silently swallowed a NOT NULL violation (e.g. a stray `owner=None` `Event` reaching persistence) and misreported it as an ordinary duplicate. Narrowed to specifically match `asyncpg.exceptions.UniqueViolationError` on the `ux_events_dedupe_key` constraint, re-raising anything else — with a regression test proving a NOT NULL violation now propagates.
+- `BudgetCalculator` (Task 9): `_COUNTED_EVENT_TYPES` was a mutable `list`, changed to a `tuple`; added a test for the `max_events_per_window <= 0` edge case, which the original formula already handled correctly but hadn't been exercised.
+- **The engine returned by `get_db_engine()` (Task 10) is configured with `poolclass=NullPool`.** Without it, the Celery worker's existing per-task `asyncio.run()` pattern (unchanged since plan 0010) breaks on the second task processed by a long-lived worker process: asyncpg connections are bound to the event loop that created them, so a pooled connection from one `asyncio.run()` call fails when reused inside the next one. This was reproduced for real (not just theorized) before and after the fix. `NullPool` means every checkout opens a fresh connection tied to whatever loop is currently running, at the cost of not pooling connections across calls — an acceptable trade-off for this task-per-invocation worker shape; revisit only if per-task connection overhead becomes measurable.
 
 ## Context
 

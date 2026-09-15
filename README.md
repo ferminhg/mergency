@@ -65,6 +65,7 @@ rolling_window_days: 28
 default_team: platform-team
 budget:
   max_events_per_window: 5
+  warn_threshold_pct: 50
 ```
 
 
@@ -72,10 +73,10 @@ budget:
 ## Roadmap
 
 - [x] Define MVP1 scope
-- [ ] GitHub App scaffolding (webhooks, install flow)
-- [ ] Event ingestion: build failures + reverts
-- [ ] CODEOWNERS-based ownership resolution
-- [ ] Budget calculation over rolling window
+- [x] GitHub App scaffolding (webhooks, install flow)
+- [x] Event ingestion: build failures + reverts
+- [x] CODEOWNERS-based ownership resolution
+- [x] Budget calculation over rolling window
 - [ ] PR comment bot
 - [ ] Historical query endpoint/view
 - [ ] v2: flaky test signal

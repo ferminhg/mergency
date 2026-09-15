@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 
 from mergency.domain.models.event import Event
 from mergency.domain.models.event_type import EventType
@@ -22,3 +23,21 @@ class InMemoryEventRepository:
     ) -> Event | None:
         async with self._lock:
             return self._events.get((installation_id, repo, sha, event_type, owner))
+
+    async def count_since(
+        self,
+        installation_id: int,
+        owner: str,
+        event_types: list[EventType],
+        since: datetime,
+    ) -> int:
+        allow_list = set(event_types)
+        async with self._lock:
+            return sum(
+                1
+                for event in self._events.values()
+                if event.installation_id == installation_id
+                and event.owner == owner
+                and event.event_type in allow_list
+                and event.ts >= since
+            )

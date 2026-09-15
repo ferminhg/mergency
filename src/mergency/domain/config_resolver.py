@@ -8,6 +8,7 @@ _CONFIG_PATH = "mergency.yml"
 _DEFAULT_ROLLING_WINDOW_DAYS = 28
 _DEFAULT_TEAM = "unassigned"
 _DEFAULT_MAX_EVENTS_PER_WINDOW = 5
+_DEFAULT_WARN_THRESHOLD_PCT = 50
 
 
 class ConfigResolver:
@@ -46,4 +47,5 @@ def _parse(installation_id: int, text: str | None) -> TenantConfig:
         rolling_window_days=data.get("rolling_window_days", _DEFAULT_ROLLING_WINDOW_DAYS),
         default_team=data.get("default_team", _DEFAULT_TEAM),
         max_events_per_window=budget.get("max_events_per_window", _DEFAULT_MAX_EVENTS_PER_WINDOW),
+        warn_threshold_pct=budget.get("warn_threshold_pct", _DEFAULT_WARN_THRESHOLD_PCT),
     )

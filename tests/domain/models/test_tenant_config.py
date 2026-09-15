@@ -11,6 +11,7 @@ def test_tenant_config_is_immutable():
         rolling_window_days=28,
         default_team="platform-team",
         max_events_per_window=5,
+        warn_threshold_pct=50,
     )
 
     with pytest.raises(dataclasses.FrozenInstanceError):
