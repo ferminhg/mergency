@@ -12,6 +12,7 @@ from mergency.adapters.github.token_manager import PyGithubInstallationTokenProv
 from mergency.adapters.memory.tenant_repository import InMemoryTenantRepository
 from mergency.api.settings import Settings
 from mergency.domain.budget_calculator import BudgetCalculator
+from mergency.domain.budget_history_query import BudgetHistoryQuery
 from mergency.domain.config_resolver import ConfigResolver
 from mergency.domain.event_classifier import EventClassifier
 from mergency.domain.installation_service import InstallationService
@@ -103,6 +104,11 @@ def get_budget_calculator() -> BudgetCalculator:
 
 
 @lru_cache
+def get_budget_history_query() -> BudgetHistoryQuery:
+    return BudgetHistoryQuery(get_budget_calculator(), get_event_repository())
+
+
+@lru_cache
 def get_pull_request_files_provider() -> PullRequestFilesProvider:
     return GithubPullRequestFilesProvider(get_installation_token_provider())
 
@@ -132,6 +138,7 @@ def reset_dependency_caches() -> None:
     get_ownership_resolver.cache_clear()
     get_db_engine.cache_clear()
     get_budget_calculator.cache_clear()
+    get_budget_history_query.cache_clear()
     get_pull_request_files_provider.cache_clear()
     get_pr_comment_client.cache_clear()
     get_pr_budget_evaluator.cache_clear()
