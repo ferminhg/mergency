@@ -16,7 +16,6 @@ from mergency.domain.config_resolver import ConfigResolver
 from mergency.domain.event_classifier import EventClassifier
 from mergency.domain.installation_service import InstallationService
 from mergency.domain.ownership_resolver import OwnershipResolver
-from mergency.domain.pr_budget_evaluator import PrBudgetEvaluator
 from mergency.domain.ports.changed_files_provider import ChangedFilesProvider
 from mergency.domain.ports.codeowners_provider import CodeownersProvider
 from mergency.domain.ports.event_repository import EventRepository
@@ -26,6 +25,7 @@ from mergency.domain.ports.pull_request_files_provider import PullRequestFilesPr
 from mergency.domain.ports.repository_content_provider import RepositoryContentProvider
 from mergency.domain.ports.tenant_config_repository import TenantConfigRepository
 from mergency.domain.ports.tenant_repository import TenantRepository
+from mergency.domain.pr_budget_evaluator import PrBudgetEvaluator
 
 
 @lru_cache
