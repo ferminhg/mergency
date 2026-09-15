@@ -83,13 +83,31 @@ async def test_invalid_signature_is_rejected(override_dependencies):
 
 
 async def test_unhandled_event_type_is_acknowledged(override_dependencies):
-    payload = json.dumps({"action": "opened"}).encode()
+    payload = json.dumps({"action": "some-future-event"}).encode()
+    headers = _signed_headers(payload, "some_future_event_type")
+
+    async with await _client() as client:
+        response = await client.post("/webhooks/github", content=payload, headers=headers)
+
+    assert response.status_code == 200
+
+
+async def test_pull_request_with_untracked_action_is_acknowledged_without_enqueueing(
+    override_dependencies, monkeypatch
+):
+    from mergency.api import webhooks
+
+    calls = []
+    monkeypatch.setattr(webhooks.evaluate_pr_budget, "delay", lambda *a: calls.append(a))
+
+    payload = json.dumps({"action": "labeled"}).encode()
     headers = _signed_headers(payload, "pull_request")
 
     async with await _client() as client:
         response = await client.post("/webhooks/github", content=payload, headers=headers)
 
     assert response.status_code == 200
+    assert calls == []
 
 
 async def test_check_run_event_enqueues_classify_activity_event(override_dependencies, monkeypatch):
@@ -156,3 +174,51 @@ async def test_malformed_installation_payload_is_acknowledged_without_crashing(o
     assert response.status_code == 200
     stored = await override_dependencies.get(1)
     assert stored is None
+
+
+async def test_pull_request_opened_enqueues_evaluate_pr_budget(override_dependencies, monkeypatch):
+    from mergency.api import webhooks
+
+    calls = []
+    monkeypatch.setattr(webhooks.evaluate_pr_budget, "delay", lambda *a: calls.append(a))
+
+    payload = json.dumps({"action": "opened", "number": 42}).encode()
+    headers = _signed_headers(payload, "pull_request")
+
+    async with await _client() as client:
+        response = await client.post("/webhooks/github", content=payload, headers=headers)
+
+    assert response.status_code == 200
+    assert calls == [({"action": "opened", "number": 42},)]
+
+
+async def test_pull_request_synchronize_enqueues_evaluate_pr_budget(override_dependencies, monkeypatch):
+    from mergency.api import webhooks
+
+    calls = []
+    monkeypatch.setattr(webhooks.evaluate_pr_budget, "delay", lambda *a: calls.append(a))
+
+    payload = json.dumps({"action": "synchronize", "number": 42}).encode()
+    headers = _signed_headers(payload, "pull_request")
+
+    async with await _client() as client:
+        response = await client.post("/webhooks/github", content=payload, headers=headers)
+
+    assert response.status_code == 200
+    assert len(calls) == 1
+
+
+async def test_pull_request_reopened_enqueues_evaluate_pr_budget(override_dependencies, monkeypatch):
+    from mergency.api import webhooks
+
+    calls = []
+    monkeypatch.setattr(webhooks.evaluate_pr_budget, "delay", lambda *a: calls.append(a))
+
+    payload = json.dumps({"action": "reopened", "number": 42}).encode()
+    headers = _signed_headers(payload, "pull_request")
+
+    async with await _client() as client:
+        response = await client.post("/webhooks/github", content=payload, headers=headers)
+
+    assert response.status_code == 200
+    assert len(calls) == 1
