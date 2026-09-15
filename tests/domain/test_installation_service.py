@@ -92,3 +92,23 @@ async def test_handle_transition_on_known_installation_does_not_log(service, rep
         await service.handle(TransitionInstallation(installation_id=42, status=TenantStatus.SUSPENDED))
 
     assert caplog.records == []
+
+
+async def test_handle_create_installation_mints_an_api_token(service, repository):
+    await service.handle(CreateInstallation(installation=_installation()))
+
+    stored = await repository.get(42)
+    assert stored is not None
+    assert stored.api_token is not None
+    assert len(stored.api_token) > 20
+
+
+async def test_recreating_an_existing_installation_preserves_its_api_token(service, repository):
+    await service.handle(CreateInstallation(installation=_installation()))
+    first = await repository.get(42)
+
+    await service.handle(CreateInstallation(installation=_installation()))
+    second = await repository.get(42)
+
+    assert second is not None
+    assert second.api_token == first.api_token
