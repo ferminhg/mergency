@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Protocol
 
+from mergency.domain.models.daily_event_count import DailyEventCount
 from mergency.domain.models.event import Event
 from mergency.domain.models.event_type import EventType
 
@@ -19,3 +20,11 @@ class EventRepository(Protocol):
         event_types: list[EventType],
         since: datetime,
     ) -> int: ...
+
+    async def daily_counts_since(
+        self,
+        installation_id: int,
+        owner: str,
+        event_types: list[EventType],
+        since: datetime,
+    ) -> list[DailyEventCount]: ...
