@@ -93,3 +93,22 @@ def test_tenant_config_repository_is_sqlalchemy_backed():
     from mergency.api import deps
 
     assert isinstance(deps.get_tenant_config_repository(), SqlAlchemyTenantConfigRepository)
+
+
+def test_pr_comment_bot_dependencies_are_cached_and_resettable(monkeypatch):
+    _set_required_env(monkeypatch, "test-app-id")
+    factories = [
+        deps.get_pull_request_files_provider,
+        deps.get_pr_comment_client,
+        deps.get_pr_budget_evaluator,
+    ]
+    first_instances = [factory() for factory in factories]
+
+    assert [factory() for factory in factories] == first_instances
+
+    deps.reset_dependency_caches()
+
+    assert all(
+        factory() is not first
+        for factory, first in zip(factories, first_instances, strict=True)
+    )

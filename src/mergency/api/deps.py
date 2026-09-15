@@ -5,6 +5,8 @@ from mergency.adapters.db.event_repository import SqlAlchemyEventRepository
 from mergency.adapters.db.tenant_config_repository import SqlAlchemyTenantConfigRepository
 from mergency.adapters.github.changed_files_provider import GithubChangedFilesProvider
 from mergency.adapters.github.codeowners_provider import GithubCodeownersProvider
+from mergency.adapters.github.pr_comment_client import GithubPrCommentClient
+from mergency.adapters.github.pull_request_files_provider import GithubPullRequestFilesProvider
 from mergency.adapters.github.repository_content_provider import GithubRepositoryContentProvider
 from mergency.adapters.github.token_manager import PyGithubInstallationTokenProvider
 from mergency.adapters.memory.tenant_repository import InMemoryTenantRepository
@@ -18,9 +20,12 @@ from mergency.domain.ports.changed_files_provider import ChangedFilesProvider
 from mergency.domain.ports.codeowners_provider import CodeownersProvider
 from mergency.domain.ports.event_repository import EventRepository
 from mergency.domain.ports.installation_token_provider import InstallationTokenProvider
+from mergency.domain.ports.pr_comment_client import PrCommentClient
+from mergency.domain.ports.pull_request_files_provider import PullRequestFilesProvider
 from mergency.domain.ports.repository_content_provider import RepositoryContentProvider
 from mergency.domain.ports.tenant_config_repository import TenantConfigRepository
 from mergency.domain.ports.tenant_repository import TenantRepository
+from mergency.domain.pr_budget_evaluator import PrBudgetEvaluator
 
 
 @lru_cache
@@ -97,6 +102,21 @@ def get_budget_calculator() -> BudgetCalculator:
     return BudgetCalculator(get_event_repository(), get_tenant_config_repository())
 
 
+@lru_cache
+def get_pull_request_files_provider() -> PullRequestFilesProvider:
+    return GithubPullRequestFilesProvider(get_installation_token_provider())
+
+
+@lru_cache
+def get_pr_comment_client() -> PrCommentClient:
+    return GithubPrCommentClient(get_installation_token_provider())
+
+
+@lru_cache
+def get_pr_budget_evaluator() -> PrBudgetEvaluator:
+    return PrBudgetEvaluator(get_ownership_resolver(), get_budget_calculator())
+
+
 def reset_dependency_caches() -> None:
     get_settings.cache_clear()
     get_tenant_repository.cache_clear()
@@ -112,3 +132,6 @@ def reset_dependency_caches() -> None:
     get_ownership_resolver.cache_clear()
     get_db_engine.cache_clear()
     get_budget_calculator.cache_clear()
+    get_pull_request_files_provider.cache_clear()
+    get_pr_comment_client.cache_clear()
+    get_pr_budget_evaluator.cache_clear()

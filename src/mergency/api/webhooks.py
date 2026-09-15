@@ -9,10 +9,13 @@ from mergency.api.deps import get_installation_service, get_settings
 from mergency.api.settings import Settings
 from mergency.domain.installation_service import InstallationService
 from mergency.worker.classify_activity_event import classify_activity_event
+from mergency.worker.evaluate_pr_budget import evaluate_pr_budget
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+_PR_TRIGGER_ACTIONS = {"opened", "synchronize", "reopened"}
 
 
 @router.post("/webhooks/github")
@@ -36,6 +39,8 @@ async def receive_webhook(
         logger.info("installation_repositories event acknowledged, no-op for now")
     elif x_github_event in ("push", "check_run"):
         classify_activity_event.delay(x_github_event, payload)
+    elif x_github_event == "pull_request" and payload.get("action") in _PR_TRIGGER_ACTIONS:
+        evaluate_pr_budget.delay(payload)
     else:
         logger.info(
             "event acknowledged, processing not yet implemented",
