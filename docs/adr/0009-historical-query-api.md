@@ -4,7 +4,7 @@ Once events, ownership, and budgets exist server-side (ADR 0005-0008), the only 
 
 ## Status
 
-📋 proposed
+✅ accepted
 
 ## Considered Options
 
