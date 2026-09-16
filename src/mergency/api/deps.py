@@ -1,7 +1,7 @@
 from functools import lru_cache
 
+from mergency.adapters.db.activity_event_repository import SqlAlchemyActivityEventRepository
 from mergency.adapters.db.engine import build_engine
-from mergency.adapters.db.event_repository import SqlAlchemyEventRepository
 from mergency.adapters.db.tenant_config_repository import SqlAlchemyTenantConfigRepository
 from mergency.adapters.github.changed_files_provider import GithubChangedFilesProvider
 from mergency.adapters.github.codeowners_provider import GithubCodeownersProvider
@@ -19,10 +19,10 @@ from mergency.domain.event_classifier import EventClassifier
 from mergency.domain.flaky_test_detector import FlakyTestDetector
 from mergency.domain.installation_service import InstallationService
 from mergency.domain.ownership_resolver import OwnershipResolver
+from mergency.domain.ports.activity_event_repository import ActivityEventRepository
 from mergency.domain.ports.changed_files_provider import ChangedFilesProvider
 from mergency.domain.ports.codeowners_provider import CodeownersProvider
 from mergency.domain.ports.commit_range_provider import CommitRangeProvider
-from mergency.domain.ports.event_repository import EventRepository
 from mergency.domain.ports.installation_token_provider import InstallationTokenProvider
 from mergency.domain.ports.pr_comment_client import PrCommentClient
 from mergency.domain.ports.pull_request_files_provider import PullRequestFilesProvider
@@ -62,8 +62,8 @@ def get_db_engine():
 
 
 @lru_cache
-def get_event_repository() -> EventRepository:
-    return SqlAlchemyEventRepository(get_db_engine())
+def get_activity_event_repository() -> ActivityEventRepository:
+    return SqlAlchemyActivityEventRepository(get_db_engine())
 
 
 @lru_cache
@@ -73,7 +73,7 @@ def get_event_classifier() -> EventClassifier:
 
 @lru_cache
 def get_flaky_test_detector() -> FlakyTestDetector:
-    return FlakyTestDetector(get_event_repository())
+    return FlakyTestDetector(get_activity_event_repository())
 
 
 @lru_cache
@@ -113,12 +113,12 @@ def get_ownership_resolver() -> OwnershipResolver:
 
 @lru_cache
 def get_budget_calculator() -> BudgetCalculator:
-    return BudgetCalculator(get_event_repository(), get_tenant_config_repository())
+    return BudgetCalculator(get_activity_event_repository(), get_tenant_config_repository())
 
 
 @lru_cache
 def get_budget_history_query() -> BudgetHistoryQuery:
-    return BudgetHistoryQuery(get_budget_calculator(), get_event_repository())
+    return BudgetHistoryQuery(get_budget_calculator(), get_activity_event_repository())
 
 
 @lru_cache
@@ -141,7 +141,7 @@ def reset_dependency_caches() -> None:
     get_tenant_repository.cache_clear()
     get_installation_service.cache_clear()
     get_installation_token_provider.cache_clear()
-    get_event_repository.cache_clear()
+    get_activity_event_repository.cache_clear()
     get_event_classifier.cache_clear()
     get_flaky_test_detector.cache_clear()
     get_tenant_config_repository.cache_clear()

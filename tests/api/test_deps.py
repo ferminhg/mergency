@@ -81,11 +81,11 @@ def test_get_budget_calculator_is_cached_and_resettable():
     assert deps.get_budget_calculator() is not first
 
 
-def test_event_repository_is_sqlalchemy_backed():
-    from mergency.adapters.db.event_repository import SqlAlchemyEventRepository
+def test_activity_event_repository_is_sqlalchemy_backed():
+    from mergency.adapters.db.activity_event_repository import SqlAlchemyActivityEventRepository
     from mergency.api import deps
 
-    assert isinstance(deps.get_event_repository(), SqlAlchemyEventRepository)
+    assert isinstance(deps.get_activity_event_repository(), SqlAlchemyActivityEventRepository)
 
 
 def test_tenant_config_repository_is_sqlalchemy_backed():
