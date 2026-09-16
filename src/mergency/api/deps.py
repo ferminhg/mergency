@@ -15,6 +15,7 @@ from mergency.domain.budget_calculator import BudgetCalculator
 from mergency.domain.budget_history_query import BudgetHistoryQuery
 from mergency.domain.config_resolver import ConfigResolver
 from mergency.domain.event_classifier import EventClassifier
+from mergency.domain.flaky_test_detector import FlakyTestDetector
 from mergency.domain.installation_service import InstallationService
 from mergency.domain.ownership_resolver import OwnershipResolver
 from mergency.domain.ports.changed_files_provider import ChangedFilesProvider
@@ -66,6 +67,11 @@ def get_event_repository() -> EventRepository:
 @lru_cache
 def get_event_classifier() -> EventClassifier:
     return EventClassifier()
+
+
+@lru_cache
+def get_flaky_test_detector() -> FlakyTestDetector:
+    return FlakyTestDetector(get_event_repository())
 
 
 @lru_cache
@@ -130,6 +136,7 @@ def reset_dependency_caches() -> None:
     get_installation_token_provider.cache_clear()
     get_event_repository.cache_clear()
     get_event_classifier.cache_clear()
+    get_flaky_test_detector.cache_clear()
     get_tenant_config_repository.cache_clear()
     get_repository_content_provider.cache_clear()
     get_codeowners_provider.cache_clear()

@@ -9,6 +9,7 @@ from mergency.api.deps import (
     get_config_resolver,
     get_event_classifier,
     get_event_repository,
+    get_flaky_test_detector,
     get_ownership_resolver,
 )
 from mergency.domain.models.check_run_signal import CheckRunSignal
@@ -44,19 +45,24 @@ def classify_activity_event(event_type: str, payload: dict) -> None:
 
 
 async def _classify_resolve_and_persist(signal: CheckRunSignal | PushSignal) -> None:
-    event = await get_event_classifier().classify(signal)
-    if event is None:
+    event_classifier = get_event_classifier()
+    event = await event_classifier.classify(signal)
+    if event is not None:
+        changed_files = await _changed_files_for(signal, event)
+        config = await get_config_resolver().resolve(event.installation_id, event.repo)
+        owners = await get_ownership_resolver().resolve_owners(
+            event.installation_id, event.repo, changed_files, config.default_team
+        )
+
+        event_repository = get_event_repository()
+        for owner in owners:
+            await event_repository.save_if_new(dataclasses.replace(event, owner=owner))
         return
 
-    changed_files = await _changed_files_for(signal, event)
-    config = await get_config_resolver().resolve(event.installation_id, event.repo)
-    owners = await get_ownership_resolver().resolve_owners(
-        event.installation_id, event.repo, changed_files, config.default_team
-    )
-
-    event_repository = get_event_repository()
-    for owner in owners:
-        await event_repository.save_if_new(dataclasses.replace(event, owner=owner))
+    if isinstance(signal, CheckRunSignal) and event_classifier.is_flaky_candidate(signal):
+        await get_flaky_test_detector().detect_and_reclassify(
+            signal.installation_id, signal.repo, signal.sha, signal.check_name, signal.completed_at
+        )
 
 
 async def _changed_files_for(signal: CheckRunSignal | PushSignal, event: Event) -> list[str]:
