@@ -3,22 +3,22 @@ from datetime import datetime, timezone
 
 import pytest
 
-from mergency.domain.models.event import Event
-from mergency.domain.models.event_type import EventType
+from mergency.domain.models.activity_event import ActivityEvent
+from mergency.domain.models.activity_event_type import ActivityEventType
 
 
 def test_event_type_values_match_adr():
-    assert EventType.BUILD_FAILURE == "build_failure"
-    assert EventType.REVERT == "revert"
-    assert EventType.INCIDENT == "incident"
+    assert ActivityEventType.BUILD_FAILURE == "build_failure"
+    assert ActivityEventType.REVERT == "revert"
+    assert ActivityEventType.INCIDENT == "incident"
 
 
 def test_event_is_immutable():
-    event = Event(
+    event = ActivityEvent(
         installation_id=1,
         repo="acme/widgets",
         sha="abc123",
-        event_type=EventType.BUILD_FAILURE,
+        event_type=ActivityEventType.BUILD_FAILURE,
         owner=None,
         ts=datetime.now(timezone.utc),
     )
