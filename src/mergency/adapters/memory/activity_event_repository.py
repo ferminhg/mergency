@@ -2,17 +2,17 @@ import asyncio
 import dataclasses
 from datetime import date, datetime, timezone
 
+from mergency.domain.models.activity_event import ActivityEvent
+from mergency.domain.models.activity_event_type import ActivityEventType
 from mergency.domain.models.daily_event_count import DailyEventCount
-from mergency.domain.models.event import Event
-from mergency.domain.models.event_type import EventType
 
 
-class InMemoryEventRepository:
+class InMemoryActivityEventRepository:
     def __init__(self) -> None:
-        self._events: dict[tuple[int, str, str, EventType, str | None], Event] = {}
+        self._events: dict[tuple[int, str, str, ActivityEventType, str | None], ActivityEvent] = {}
         self._lock = asyncio.Lock()
 
-    async def save_if_new(self, event: Event) -> bool:
+    async def save_if_new(self, event: ActivityEvent) -> bool:
         key = (event.installation_id, event.repo, event.sha, event.event_type, event.owner)
         async with self._lock:
             if key in self._events:
@@ -21,8 +21,8 @@ class InMemoryEventRepository:
             return True
 
     async def get(
-        self, installation_id: int, repo: str, sha: str, event_type: EventType, owner: str
-    ) -> Event | None:
+        self, installation_id: int, repo: str, sha: str, event_type: ActivityEventType, owner: str
+    ) -> ActivityEvent | None:
         async with self._lock:
             return self._events.get((installation_id, repo, sha, event_type, owner))
 
@@ -30,7 +30,7 @@ class InMemoryEventRepository:
         self,
         installation_id: int,
         owner: str,
-        event_types: list[EventType],
+        event_types: list[ActivityEventType],
         since: datetime,
     ) -> int:
         allow_list = set(event_types)
@@ -48,7 +48,7 @@ class InMemoryEventRepository:
         self,
         installation_id: int,
         owner: str,
-        event_types: list[EventType],
+        event_types: list[ActivityEventType],
         since: datetime,
     ) -> list[DailyEventCount]:
         allow_list = set(event_types)
@@ -72,9 +72,9 @@ class InMemoryEventRepository:
         repo: str,
         sha: str,
         check_name: str,
-        event_type: EventType,
+        event_type: ActivityEventType,
         since: datetime,
-    ) -> list[Event]:
+    ) -> list[ActivityEvent]:
         async with self._lock:
             return [
                 event
@@ -87,7 +87,7 @@ class InMemoryEventRepository:
                 and event.ts >= since
             ]
 
-    async def retype(self, event: Event, new_type: EventType) -> bool:
+    async def retype(self, event: ActivityEvent, new_type: ActivityEventType) -> bool:
         old_key = (event.installation_id, event.repo, event.sha, event.event_type, event.owner)
         new_key = (event.installation_id, event.repo, event.sha, new_type, event.owner)
         async with self._lock:
