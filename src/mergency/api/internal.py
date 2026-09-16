@@ -7,7 +7,7 @@ from mergency.domain.ports.tenant_repository import TenantRepository
 router = APIRouter()
 
 
-@router.get("/internal/installations/{installation_id}")
+@router.get("/internal/installations/{installation_id}", response_model_exclude={"api_token"})
 async def get_installation(
     installation_id: int,
     tenant_repository: TenantRepository = Depends(get_tenant_repository),

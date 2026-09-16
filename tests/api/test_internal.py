@@ -45,6 +45,25 @@ async def test_get_known_installation_returns_stored_state(override_dependencies
     assert body["status"] == "active"
 
 
+async def test_get_known_installation_never_returns_the_api_token(override_dependencies):
+    installation = Installation(
+        installation_id=42,
+        account_login="acme",
+        account_type="Organization",
+        status=TenantStatus.ACTIVE,
+        repository_selection="all",
+        api_token="secret-token-value",
+    )
+    await override_dependencies.upsert(installation)
+
+    async with await _client() as client:
+        response = await client.get("/internal/installations/42")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert "api_token" not in body
+
+
 async def test_get_unknown_installation_returns_404(override_dependencies):
     async with await _client() as client:
         response = await client.get("/internal/installations/999")

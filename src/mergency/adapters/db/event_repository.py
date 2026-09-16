@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from mergency.adapters.db.tables import events_table
+from mergency.domain.models.daily_event_count import DailyEventCount
 from mergency.domain.models.event import Event
 from mergency.domain.models.event_type import EventType
 
@@ -70,6 +71,29 @@ class SqlAlchemyEventRepository:
                 )
             )
         return result.scalar_one()
+
+    async def daily_counts_since(
+        self,
+        installation_id: int,
+        owner: str,
+        event_types: list[EventType],
+        since: datetime,
+    ) -> list[DailyEventCount]:
+        day = sa.cast(events_table.c.ts, sa.Date).label("day")
+        async with self._engine.connect() as conn:
+            result = await conn.execute(
+                select(day, sa.func.count().label("count"))
+                .where(
+                    events_table.c.installation_id == installation_id,
+                    events_table.c.owner == owner,
+                    events_table.c.event_type.in_([t.value for t in event_types]),
+                    events_table.c.ts >= since,
+                )
+                .group_by(day)
+                .order_by(day)
+            )
+            rows = result.all()
+        return [DailyEventCount(day=row.day, count=row.count) for row in rows]
 
 
 def _row_to_event(row) -> Event:

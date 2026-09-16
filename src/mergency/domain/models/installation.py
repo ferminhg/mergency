@@ -10,3 +10,4 @@ class Installation:
     account_type: str
     status: TenantStatus
     repository_selection: str
+    api_token: str | None = None
