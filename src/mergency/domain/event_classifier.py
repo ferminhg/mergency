@@ -1,8 +1,8 @@
 import re
 
+from mergency.domain.models.activity_event import ActivityEvent
+from mergency.domain.models.activity_event_type import ActivityEventType
 from mergency.domain.models.check_run_signal import CheckRunSignal
-from mergency.domain.models.event import Event
-from mergency.domain.models.event_type import EventType
 from mergency.domain.models.push_signal import PushSignal
 
 _QUALIFYING_CONCLUSIONS = {"failure", "timed_out"}
@@ -11,7 +11,7 @@ _REVERT_MENTION = "this reverts commit"
 
 
 class EventClassifier:
-    async def classify(self, signal: CheckRunSignal | PushSignal) -> Event | None:
+    async def classify(self, signal: CheckRunSignal | PushSignal) -> ActivityEvent | None:
         match signal:
             case CheckRunSignal():
                 return self._classify_check_run(signal)
@@ -31,7 +31,7 @@ class EventClassifier:
             return False
         return True
 
-    def _classify_check_run(self, signal: CheckRunSignal) -> Event | None:
+    def _classify_check_run(self, signal: CheckRunSignal) -> ActivityEvent | None:
         if signal.action != "completed":
             return None
         if signal.conclusion not in _QUALIFYING_CONCLUSIONS:
@@ -40,26 +40,26 @@ class EventClassifier:
             return None
         if signal.completed_at is None:
             return None
-        return Event(
+        return ActivityEvent(
             installation_id=signal.installation_id,
             repo=signal.repo,
             sha=signal.sha,
-            event_type=EventType.BUILD_FAILURE,
+            event_type=ActivityEventType.BUILD_FAILURE,
             owner=None,
             ts=signal.completed_at,
             check_name=signal.check_name,
         )
 
-    def _classify_push(self, signal: PushSignal) -> Event | None:
+    def _classify_push(self, signal: PushSignal) -> ActivityEvent | None:
         if signal.ref != f"refs/heads/{signal.default_branch}":
             return None
         for commit in signal.commits:
             if _looks_like_revert(commit.message):
-                return Event(
+                return ActivityEvent(
                     installation_id=signal.installation_id,
                     repo=signal.repo,
                     sha=commit.sha,
-                    event_type=EventType.REVERT,
+                    event_type=ActivityEventType.REVERT,
                     owner=None,
                     ts=commit.timestamp,
                 )

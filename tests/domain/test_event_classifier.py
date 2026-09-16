@@ -3,8 +3,8 @@ from datetime import datetime, timezone
 import pytest
 
 from mergency.domain.event_classifier import EventClassifier
+from mergency.domain.models.activity_event_type import ActivityEventType
 from mergency.domain.models.check_run_signal import CheckRunSignal
-from mergency.domain.models.event_type import EventType
 from mergency.domain.models.push_commit import PushCommit
 from mergency.domain.models.push_signal import PushSignal
 
@@ -44,7 +44,7 @@ async def test_classifies_completed_failure_on_default_branch_as_build_failure(c
     event = await classifier.classify(_check_run_signal())
 
     assert event is not None
-    assert event.event_type == EventType.BUILD_FAILURE
+    assert event.event_type == ActivityEventType.BUILD_FAILURE
     assert event.owner is None
 
 
@@ -100,7 +100,7 @@ async def test_classifies_revert_push_on_default_branch(classifier):
     event = await classifier.classify(_push_signal())
 
     assert event is not None
-    assert event.event_type == EventType.REVERT
+    assert event.event_type == ActivityEventType.REVERT
     assert event.sha == "sha1"
 
 
@@ -125,4 +125,4 @@ async def test_recognizes_explicit_revert_mention(classifier):
     )
 
     assert event is not None
-    assert event.event_type == EventType.REVERT
+    assert event.event_type == ActivityEventType.REVERT
