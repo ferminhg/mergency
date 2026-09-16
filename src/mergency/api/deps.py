@@ -5,6 +5,7 @@ from mergency.adapters.db.event_repository import SqlAlchemyEventRepository
 from mergency.adapters.db.tenant_config_repository import SqlAlchemyTenantConfigRepository
 from mergency.adapters.github.changed_files_provider import GithubChangedFilesProvider
 from mergency.adapters.github.codeowners_provider import GithubCodeownersProvider
+from mergency.adapters.github.commit_range_provider import GithubCommitRangeProvider
 from mergency.adapters.github.pr_comment_client import GithubPrCommentClient
 from mergency.adapters.github.pull_request_files_provider import GithubPullRequestFilesProvider
 from mergency.adapters.github.repository_content_provider import GithubRepositoryContentProvider
@@ -20,6 +21,7 @@ from mergency.domain.installation_service import InstallationService
 from mergency.domain.ownership_resolver import OwnershipResolver
 from mergency.domain.ports.changed_files_provider import ChangedFilesProvider
 from mergency.domain.ports.codeowners_provider import CodeownersProvider
+from mergency.domain.ports.commit_range_provider import CommitRangeProvider
 from mergency.domain.ports.event_repository import EventRepository
 from mergency.domain.ports.installation_token_provider import InstallationTokenProvider
 from mergency.domain.ports.pr_comment_client import PrCommentClient
@@ -95,6 +97,11 @@ def get_changed_files_provider() -> ChangedFilesProvider:
 
 
 @lru_cache
+def get_commit_range_provider() -> CommitRangeProvider:
+    return GithubCommitRangeProvider(get_installation_token_provider())
+
+
+@lru_cache
 def get_config_resolver() -> ConfigResolver:
     return ConfigResolver(get_repository_content_provider(), get_tenant_config_repository())
 
@@ -141,6 +148,7 @@ def reset_dependency_caches() -> None:
     get_repository_content_provider.cache_clear()
     get_codeowners_provider.cache_clear()
     get_changed_files_provider.cache_clear()
+    get_commit_range_provider.cache_clear()
     get_config_resolver.cache_clear()
     get_ownership_resolver.cache_clear()
     get_db_engine.cache_clear()

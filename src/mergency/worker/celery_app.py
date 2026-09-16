@@ -7,5 +7,6 @@ celery_app = Celery(
     include=[
         "mergency.worker.classify_activity_event",
         "mergency.worker.evaluate_pr_budget",
+        "mergency.worker.report_incident",
     ],
 )
