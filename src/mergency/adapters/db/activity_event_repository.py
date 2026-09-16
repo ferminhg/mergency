@@ -7,16 +7,16 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from mergency.adapters.db.tables import events_table
+from mergency.domain.models.activity_event import ActivityEvent
+from mergency.domain.models.activity_event_type import ActivityEventType
 from mergency.domain.models.daily_event_count import DailyEventCount
-from mergency.domain.models.event import Event
-from mergency.domain.models.event_type import EventType
 
 
-class SqlAlchemyEventRepository:
+class SqlAlchemyActivityEventRepository:
     def __init__(self, engine: AsyncEngine) -> None:
         self._engine = engine
 
-    async def save_if_new(self, event: Event) -> bool:
+    async def save_if_new(self, event: ActivityEvent) -> bool:
         try:
             async with self._engine.begin() as conn:
                 await conn.execute(
@@ -37,8 +37,8 @@ class SqlAlchemyEventRepository:
         return True
 
     async def get(
-        self, installation_id: int, repo: str, sha: str, event_type: EventType, owner: str
-    ) -> Event | None:
+        self, installation_id: int, repo: str, sha: str, event_type: ActivityEventType, owner: str
+    ) -> ActivityEvent | None:
         async with self._engine.connect() as conn:
             row = (
                 await conn.execute(
@@ -57,7 +57,7 @@ class SqlAlchemyEventRepository:
         self,
         installation_id: int,
         owner: str,
-        event_types: list[EventType],
+        event_types: list[ActivityEventType],
         since: datetime,
     ) -> int:
         async with self._engine.connect() as conn:
@@ -77,7 +77,7 @@ class SqlAlchemyEventRepository:
         self,
         installation_id: int,
         owner: str,
-        event_types: list[EventType],
+        event_types: list[ActivityEventType],
         since: datetime,
     ) -> list[DailyEventCount]:
         day = sa.cast(events_table.c.ts, sa.Date).label("day")
@@ -102,9 +102,9 @@ class SqlAlchemyEventRepository:
         repo: str,
         sha: str,
         check_name: str,
-        event_type: EventType,
+        event_type: ActivityEventType,
         since: datetime,
-    ) -> list[Event]:
+    ) -> list[ActivityEvent]:
         async with self._engine.connect() as conn:
             rows = (
                 await conn.execute(
@@ -120,7 +120,7 @@ class SqlAlchemyEventRepository:
             ).all()
         return [_row_to_event(row) for row in rows]
 
-    async def retype(self, event: Event, new_type: EventType) -> bool:
+    async def retype(self, event: ActivityEvent, new_type: ActivityEventType) -> bool:
         try:
             async with self._engine.begin() as conn:
                 result = await conn.execute(
@@ -141,12 +141,12 @@ class SqlAlchemyEventRepository:
         return result.rowcount > 0
 
 
-def _row_to_event(row) -> Event:
-    return Event(
+def _row_to_event(row) -> ActivityEvent:
+    return ActivityEvent(
         installation_id=row.installation_id,
         repo=row.repo,
         sha=row.sha,
-        event_type=EventType(row.event_type),
+        event_type=ActivityEventType(row.event_type),
         owner=row.owner,
         ts=row.ts,
         check_name=row.check_name,

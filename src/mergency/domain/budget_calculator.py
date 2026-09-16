@@ -1,18 +1,18 @@
 from datetime import datetime, timedelta, timezone
 
+from mergency.domain.models.activity_event_type import ActivityEventType
 from mergency.domain.models.budget_status import BudgetStatus
-from mergency.domain.models.event_type import EventType
-from mergency.domain.ports.event_repository import EventRepository
+from mergency.domain.ports.activity_event_repository import ActivityEventRepository
 from mergency.domain.ports.tenant_config_repository import TenantConfigRepository
 
-_COUNTED_EVENT_TYPES = (EventType.BUILD_FAILURE, EventType.REVERT, EventType.INCIDENT)
+_COUNTED_EVENT_TYPES = (ActivityEventType.BUILD_FAILURE, ActivityEventType.REVERT, ActivityEventType.INCIDENT)
 _FALLBACK_ROLLING_WINDOW_DAYS = 28
 _FALLBACK_MAX_EVENTS_PER_WINDOW = 5
 
 
 class BudgetCalculator:
     def __init__(
-        self, event_repository: EventRepository, config_repository: TenantConfigRepository
+        self, event_repository: ActivityEventRepository, config_repository: TenantConfigRepository
     ) -> None:
         self._event_repository = event_repository
         self._config_repository = config_repository

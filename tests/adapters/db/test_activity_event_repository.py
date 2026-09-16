@@ -3,30 +3,30 @@ from datetime import date, datetime, timedelta, timezone
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from mergency.adapters.db.event_repository import SqlAlchemyEventRepository
+from mergency.adapters.db.activity_event_repository import SqlAlchemyActivityEventRepository
+from mergency.domain.models.activity_event import ActivityEvent
+from mergency.domain.models.activity_event_type import ActivityEventType
 from mergency.domain.models.daily_event_count import DailyEventCount
-from mergency.domain.models.event import Event
-from mergency.domain.models.event_type import EventType
 
 
-def _event(sha: str = "abc123", owner: str = "@org/team-a", ts: datetime | None = None) -> Event:
-    return Event(
+def _event(sha: str = "abc123", owner: str = "@org/team-a", ts: datetime | None = None) -> ActivityEvent:
+    return ActivityEvent(
         installation_id=1,
         repo="acme/widgets",
         sha=sha,
-        event_type=EventType.BUILD_FAILURE,
+        event_type=ActivityEventType.BUILD_FAILURE,
         owner=owner,
         ts=ts or datetime.now(timezone.utc),
     )
 
 
 async def test_save_if_new_persists_check_name(db_engine):
-    repository = SqlAlchemyEventRepository(db_engine)
-    event = Event(
+    repository = SqlAlchemyActivityEventRepository(db_engine)
+    event = ActivityEvent(
         installation_id=1,
         repo="acme/widgets",
         sha="abc123",
-        event_type=EventType.BUILD_FAILURE,
+        event_type=ActivityEventType.BUILD_FAILURE,
         owner="@org/team-a",
         ts=datetime.now(timezone.utc),
         check_name="ci/build",
@@ -34,40 +34,40 @@ async def test_save_if_new_persists_check_name(db_engine):
 
     await repository.save_if_new(event)
 
-    stored = await repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "@org/team-a")
+    stored = await repository.get(1, "acme/widgets", "abc123", ActivityEventType.BUILD_FAILURE, "@org/team-a")
     assert stored.check_name == "ci/build"
 
 
 async def test_save_if_new_persists_null_check_name_for_revert_events(db_engine):
-    repository = SqlAlchemyEventRepository(db_engine)
-    event = Event(
+    repository = SqlAlchemyActivityEventRepository(db_engine)
+    event = ActivityEvent(
         installation_id=1,
         repo="acme/widgets",
         sha="sha1",
-        event_type=EventType.REVERT,
+        event_type=ActivityEventType.REVERT,
         owner="@org/team-a",
         ts=datetime.now(timezone.utc),
     )
 
     await repository.save_if_new(event)
 
-    stored = await repository.get(1, "acme/widgets", "sha1", EventType.REVERT, "@org/team-a")
+    stored = await repository.get(1, "acme/widgets", "sha1", ActivityEventType.REVERT, "@org/team-a")
     assert stored.check_name is None
 
 
 async def test_save_if_new_persists_and_reports_new(db_engine):
-    repository = SqlAlchemyEventRepository(db_engine)
+    repository = SqlAlchemyActivityEventRepository(db_engine)
 
     saved = await repository.save_if_new(_event())
 
     assert saved is True
-    stored = await repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "@org/team-a")
+    stored = await repository.get(1, "acme/widgets", "abc123", ActivityEventType.BUILD_FAILURE, "@org/team-a")
     assert stored is not None
     assert stored.owner == "@org/team-a"
 
 
 async def test_save_if_new_is_idempotent_on_dedupe_key(db_engine):
-    repository = SqlAlchemyEventRepository(db_engine)
+    repository = SqlAlchemyActivityEventRepository(db_engine)
     await repository.save_if_new(_event())
 
     saved_again = await repository.save_if_new(_event())
@@ -76,7 +76,7 @@ async def test_save_if_new_is_idempotent_on_dedupe_key(db_engine):
 
 
 async def test_same_raw_event_with_a_different_owner_is_a_distinct_row(db_engine):
-    repository = SqlAlchemyEventRepository(db_engine)
+    repository = SqlAlchemyActivityEventRepository(db_engine)
     await repository.save_if_new(_event(owner="@org/team-a"))
 
     saved = await repository.save_if_new(_event(owner="@org/team-b"))
@@ -85,7 +85,7 @@ async def test_same_raw_event_with_a_different_owner_is_a_distinct_row(db_engine
 
 
 async def test_save_if_new_reraises_on_not_null_violation(db_engine):
-    repository = SqlAlchemyEventRepository(db_engine)
+    repository = SqlAlchemyActivityEventRepository(db_engine)
     event_with_no_owner = _event(owner=None)
 
     with pytest.raises(IntegrityError):
@@ -93,22 +93,22 @@ async def test_save_if_new_reraises_on_not_null_violation(db_engine):
 
 
 async def test_get_returns_none_when_absent(db_engine):
-    repository = SqlAlchemyEventRepository(db_engine)
+    repository = SqlAlchemyActivityEventRepository(db_engine)
 
     assert (
-        await repository.get(1, "acme/widgets", "missing", EventType.BUILD_FAILURE, "@org/team-a")
+        await repository.get(1, "acme/widgets", "missing", ActivityEventType.BUILD_FAILURE, "@org/team-a")
         is None
     )
 
 
 async def test_count_since_counts_matching_owner_and_type_within_window(db_engine):
-    repository = SqlAlchemyEventRepository(db_engine)
+    repository = SqlAlchemyActivityEventRepository(db_engine)
     await repository.save_if_new(_event())
 
     count = await repository.count_since(
         1,
         "@org/team-a",
-        [EventType.BUILD_FAILURE, EventType.REVERT],
+        [ActivityEventType.BUILD_FAILURE, ActivityEventType.REVERT],
         datetime.now(timezone.utc) - timedelta(days=1),
     )
 
@@ -116,26 +116,26 @@ async def test_count_since_counts_matching_owner_and_type_within_window(db_engin
 
 
 async def test_count_since_excludes_events_outside_the_window(db_engine):
-    repository = SqlAlchemyEventRepository(db_engine)
+    repository = SqlAlchemyActivityEventRepository(db_engine)
     old_ts = datetime.now(timezone.utc) - timedelta(days=100)
     await repository.save_if_new(_event(sha="old-sha", ts=old_ts))
 
     count = await repository.count_since(
-        1, "@org/team-a", [EventType.BUILD_FAILURE], datetime.now(timezone.utc) - timedelta(days=28)
+        1, "@org/team-a", [ActivityEventType.BUILD_FAILURE], datetime.now(timezone.utc) - timedelta(days=28)
     )
 
     assert count == 0
 
 
 async def test_daily_counts_since_buckets_events_by_day(db_engine):
-    repository = SqlAlchemyEventRepository(db_engine)
+    repository = SqlAlchemyActivityEventRepository(db_engine)
     day1 = datetime(2026, 9, 1, 10, 0, tzinfo=timezone.utc)
     day2 = datetime(2026, 9, 2, 10, 0, tzinfo=timezone.utc)
     await repository.save_if_new(_event(sha="sha1", ts=day1))
     await repository.save_if_new(_event(sha="sha2", ts=day2))
 
     buckets = await repository.daily_counts_since(
-        1, "@org/team-a", [EventType.BUILD_FAILURE], day1 - timedelta(days=1)
+        1, "@org/team-a", [ActivityEventType.BUILD_FAILURE], day1 - timedelta(days=1)
     )
 
     assert buckets == [
@@ -145,27 +145,27 @@ async def test_daily_counts_since_buckets_events_by_day(db_engine):
 
 
 async def test_daily_counts_since_excludes_events_outside_the_window(db_engine):
-    repository = SqlAlchemyEventRepository(db_engine)
+    repository = SqlAlchemyActivityEventRepository(db_engine)
     old_ts = datetime.now(timezone.utc) - timedelta(days=100)
     await repository.save_if_new(_event(sha="old-sha", ts=old_ts))
 
     buckets = await repository.daily_counts_since(
-        1, "@org/team-a", [EventType.BUILD_FAILURE], datetime.now(timezone.utc) - timedelta(days=28)
+        1, "@org/team-a", [ActivityEventType.BUILD_FAILURE], datetime.now(timezone.utc) - timedelta(days=28)
     )
 
     assert buckets == []
 
 
 async def test_find_recent_returns_matching_events_within_window(db_engine):
-    repository = SqlAlchemyEventRepository(db_engine)
+    repository = SqlAlchemyActivityEventRepository(db_engine)
     now = datetime.now(timezone.utc)
-    await repository.save_if_new(Event(
+    await repository.save_if_new(ActivityEvent(
         installation_id=1, repo="acme/widgets", sha="abc123",
-        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=now, check_name="ci/build",
+        event_type=ActivityEventType.BUILD_FAILURE, owner="@org/team-a", ts=now, check_name="ci/build",
     ))
 
     found = await repository.find_recent(
-        1, "acme/widgets", "abc123", "ci/build", EventType.BUILD_FAILURE,
+        1, "acme/widgets", "abc123", "ci/build", ActivityEventType.BUILD_FAILURE,
         now - timedelta(hours=1),
     )
 
@@ -174,15 +174,15 @@ async def test_find_recent_returns_matching_events_within_window(db_engine):
 
 
 async def test_find_recent_excludes_events_outside_the_window(db_engine):
-    repository = SqlAlchemyEventRepository(db_engine)
+    repository = SqlAlchemyActivityEventRepository(db_engine)
     stale_ts = datetime.now(timezone.utc) - timedelta(hours=48)
-    await repository.save_if_new(Event(
+    await repository.save_if_new(ActivityEvent(
         installation_id=1, repo="acme/widgets", sha="abc123",
-        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=stale_ts, check_name="ci/build",
+        event_type=ActivityEventType.BUILD_FAILURE, owner="@org/team-a", ts=stale_ts, check_name="ci/build",
     ))
 
     found = await repository.find_recent(
-        1, "acme/widgets", "abc123", "ci/build", EventType.BUILD_FAILURE,
+        1, "acme/widgets", "abc123", "ci/build", ActivityEventType.BUILD_FAILURE,
         datetime.now(timezone.utc) - timedelta(hours=24),
     )
 
@@ -190,35 +190,35 @@ async def test_find_recent_excludes_events_outside_the_window(db_engine):
 
 
 async def test_retype_changes_the_event_type_in_place(db_engine):
-    repository = SqlAlchemyEventRepository(db_engine)
+    repository = SqlAlchemyActivityEventRepository(db_engine)
     now = datetime.now(timezone.utc)
-    original = Event(
+    original = ActivityEvent(
         installation_id=1, repo="acme/widgets", sha="abc123",
-        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=now, check_name="ci/build",
+        event_type=ActivityEventType.BUILD_FAILURE, owner="@org/team-a", ts=now, check_name="ci/build",
     )
     await repository.save_if_new(original)
 
-    retyped = await repository.retype(original, EventType.FLAKY_TEST)
+    retyped = await repository.retype(original, ActivityEventType.FLAKY_TEST)
 
     assert retyped is True
-    assert await repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "@org/team-a") is None
-    stored = await repository.get(1, "acme/widgets", "abc123", EventType.FLAKY_TEST, "@org/team-a")
+    assert await repository.get(1, "acme/widgets", "abc123", ActivityEventType.BUILD_FAILURE, "@org/team-a") is None
+    stored = await repository.get(1, "acme/widgets", "abc123", ActivityEventType.FLAKY_TEST, "@org/team-a")
     assert stored is not None
     assert stored.check_name == "ci/build"
 
 
 async def test_retype_is_a_noop_when_the_target_already_exists(db_engine):
-    repository = SqlAlchemyEventRepository(db_engine)
+    repository = SqlAlchemyActivityEventRepository(db_engine)
     now = datetime.now(timezone.utc)
-    original = Event(
+    original = ActivityEvent(
         installation_id=1, repo="acme/widgets", sha="abc123",
-        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=now, check_name="ci/build",
+        event_type=ActivityEventType.BUILD_FAILURE, owner="@org/team-a", ts=now, check_name="ci/build",
     )
-    already_flaky = Event(
+    already_flaky = ActivityEvent(
         installation_id=1, repo="acme/widgets", sha="abc123",
-        event_type=EventType.FLAKY_TEST, owner="@org/team-a", ts=now, check_name="ci/build",
+        event_type=ActivityEventType.FLAKY_TEST, owner="@org/team-a", ts=now, check_name="ci/build",
     )
     await repository.save_if_new(original)
     await repository.save_if_new(already_flaky)
 
-    assert await repository.retype(original, EventType.FLAKY_TEST) is False
+    assert await repository.retype(original, ActivityEventType.FLAKY_TEST) is False
