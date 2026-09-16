@@ -4,7 +4,7 @@ ADR 0005 introduced `domain/models/event.py`'s `Event` (fields: `installation_id
 
 ## Status
 
-📋 proposed
+✅ accepted (implemented — see `docs/plan/0017-rename-event-to-activity-event.md`)
 
 ## Considered Options
 
