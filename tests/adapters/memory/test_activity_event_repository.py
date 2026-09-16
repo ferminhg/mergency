@@ -1,7 +1,6 @@
 from datetime import date, datetime, timedelta, timezone
 
 from mergency.adapters.memory.activity_event_repository import InMemoryActivityEventRepository
-
 from mergency.domain.models.activity_event import ActivityEvent
 from mergency.domain.models.activity_event_type import ActivityEventType
 from mergency.domain.models.daily_event_count import DailyEventCount
