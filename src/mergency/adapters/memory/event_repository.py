@@ -1,6 +1,7 @@
 import asyncio
-from datetime import datetime
+from datetime import date, datetime, timezone
 
+from mergency.domain.models.daily_event_count import DailyEventCount
 from mergency.domain.models.event import Event
 from mergency.domain.models.event_type import EventType
 
@@ -41,3 +42,25 @@ class InMemoryEventRepository:
                 and event.event_type in allow_list
                 and event.ts >= since
             )
+
+    async def daily_counts_since(
+        self,
+        installation_id: int,
+        owner: str,
+        event_types: list[EventType],
+        since: datetime,
+    ) -> list[DailyEventCount]:
+        allow_list = set(event_types)
+        counts: dict[date, int] = {}
+        async with self._lock:
+            for event in self._events.values():
+                if not (
+                    event.installation_id == installation_id
+                    and event.owner == owner
+                    and event.event_type in allow_list
+                    and event.ts >= since
+                ):
+                    continue
+                day = event.ts.astimezone(timezone.utc).date()
+                counts[day] = counts.get(day, 0) + 1
+        return [DailyEventCount(day=day, count=count) for day, count in sorted(counts.items())]

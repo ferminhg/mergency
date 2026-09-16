@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy.exc import IntegrityError
 
 from mergency.adapters.db.event_repository import SqlAlchemyEventRepository
+from mergency.domain.models.daily_event_count import DailyEventCount
 from mergency.domain.models.event import Event
 from mergency.domain.models.event_type import EventType
 
@@ -89,3 +90,32 @@ async def test_count_since_excludes_events_outside_the_window(db_engine):
     )
 
     assert count == 0
+
+
+async def test_daily_counts_since_buckets_events_by_day(db_engine):
+    repository = SqlAlchemyEventRepository(db_engine)
+    day1 = datetime(2026, 9, 1, 10, 0, tzinfo=timezone.utc)
+    day2 = datetime(2026, 9, 2, 10, 0, tzinfo=timezone.utc)
+    await repository.save_if_new(_event(sha="sha1", ts=day1))
+    await repository.save_if_new(_event(sha="sha2", ts=day2))
+
+    buckets = await repository.daily_counts_since(
+        1, "@org/team-a", [EventType.BUILD_FAILURE], day1 - timedelta(days=1)
+    )
+
+    assert buckets == [
+        DailyEventCount(day=date(2026, 9, 1), count=1),
+        DailyEventCount(day=date(2026, 9, 2), count=1),
+    ]
+
+
+async def test_daily_counts_since_excludes_events_outside_the_window(db_engine):
+    repository = SqlAlchemyEventRepository(db_engine)
+    old_ts = datetime.now(timezone.utc) - timedelta(days=100)
+    await repository.save_if_new(_event(sha="old-sha", ts=old_ts))
+
+    buckets = await repository.daily_counts_since(
+        1, "@org/team-a", [EventType.BUILD_FAILURE], datetime.now(timezone.utc) - timedelta(days=28)
+    )
+
+    assert buckets == []
