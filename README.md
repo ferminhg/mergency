@@ -77,8 +77,8 @@ budget:
 - [x] Event ingestion: build failures + reverts
 - [x] CODEOWNERS-based ownership resolution
 - [x] Budget calculation over rolling window
-- [ ] PR comment bot
-- [ ] Historical query endpoint/view
+- [x] PR comment bot
+- [x] Historical query endpoint/view
 - [ ] v2: flaky test signal
 - [ ] v2: deploy-to-incident traceability
 - [ ] v3: configurable consequence policy engine (opt-in)
