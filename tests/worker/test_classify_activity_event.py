@@ -4,6 +4,7 @@ from mergency.adapters.memory.event_repository import InMemoryEventRepository
 from mergency.adapters.memory.tenant_config_repository import InMemoryTenantConfigRepository
 from mergency.domain.config_resolver import ConfigResolver
 from mergency.domain.event_classifier import EventClassifier
+from mergency.domain.flaky_test_detector import FlakyTestDetector
 from mergency.domain.models.event_type import EventType
 from mergency.domain.ownership_resolver import OwnershipResolver
 from mergency.worker import classify_activity_event as task_module
@@ -52,13 +53,17 @@ def _wire(monkeypatch, *, codeowners_by_path=None, changed_files=None):
         "get_changed_files_provider",
         lambda: _StubChangedFilesProvider(changed_files or []),
     )
+    monkeypatch.setattr(
+        task_module, "get_flaky_test_detector", lambda: FlakyTestDetector(event_repository)
+    )
     return event_repository
 
 
-def _check_run_payload():
-    return {
+def _check_run_payload(**overrides):
+    payload = {
         "action": "completed",
         "check_run": {
+            "name": "ci/build",
             "head_sha": "abc123",
             "conclusion": "failure",
             "completed_at": "2026-09-14T10:00:00Z",
@@ -67,6 +72,12 @@ def _check_run_payload():
         "repository": {"full_name": "acme/widgets", "default_branch": "main"},
         "installation": {"id": 1},
     }
+    for key, value in overrides.items():
+        if key in payload["check_run"]:
+            payload["check_run"][key] = value
+        else:
+            payload[key] = value
+    return payload
 
 
 def _push_payload():
@@ -157,6 +168,63 @@ def test_classify_activity_event_is_idempotent_across_redelivery(monkeypatch):
         event_repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "@org/team-a")
     )
     assert stored is not None
+
+
+def test_a_successful_rerun_reclassifies_the_prior_failure_as_flaky(monkeypatch):
+    event_repository = _wire(
+        monkeypatch,
+        codeowners_by_path={"src/build.py": [("TEAM", "@org/team-a")]},
+        changed_files=["src/build.py"],
+    )
+    task_module.classify_activity_event("check_run", _check_run_payload())
+
+    task_module.classify_activity_event(
+        "check_run",
+        _check_run_payload(conclusion="success", completed_at="2026-09-14T11:00:00Z"),
+    )
+
+    assert asyncio.run(
+        event_repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "@org/team-a")
+    ) is None
+    assert asyncio.run(
+        event_repository.get(1, "acme/widgets", "abc123", EventType.FLAKY_TEST, "@org/team-a")
+    ) is not None
+
+
+def test_a_successful_rerun_outside_the_correlation_window_does_not_reclassify(monkeypatch):
+    event_repository = _wire(
+        monkeypatch,
+        codeowners_by_path={"src/build.py": [("TEAM", "@org/team-a")]},
+        changed_files=["src/build.py"],
+    )
+    task_module.classify_activity_event("check_run", _check_run_payload())
+
+    task_module.classify_activity_event(
+        "check_run",
+        _check_run_payload(conclusion="success", completed_at="2026-09-16T10:00:00Z"),
+    )
+
+    assert asyncio.run(
+        event_repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "@org/team-a")
+    ) is not None
+
+
+def test_a_successful_rerun_for_a_different_check_name_does_not_reclassify(monkeypatch):
+    event_repository = _wire(
+        monkeypatch,
+        codeowners_by_path={"src/build.py": [("TEAM", "@org/team-a")]},
+        changed_files=["src/build.py"],
+    )
+    task_module.classify_activity_event("check_run", _check_run_payload())
+
+    task_module.classify_activity_event(
+        "check_run",
+        _check_run_payload(name="ci/lint", conclusion="success", completed_at="2026-09-14T11:00:00Z"),
+    )
+
+    assert asyncio.run(
+        event_repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "@org/team-a")
+    ) is not None
 
 
 def test_unknown_event_type_is_dropped_without_error(monkeypatch):

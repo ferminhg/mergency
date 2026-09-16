@@ -151,6 +151,99 @@ async def test_daily_counts_since_buckets_by_day_for_matching_owner_and_type():
     ]
 
 
+async def test_find_recent_returns_matching_events_within_window():
+    repository = InMemoryEventRepository()
+    now = datetime.now(timezone.utc)
+    matching = Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=now, check_name="ci/build",
+    )
+    await repository.save_if_new(matching)
+
+    found = await repository.find_recent(
+        1, "acme/widgets", "abc123", "ci/build", EventType.BUILD_FAILURE, now - timedelta(hours=1)
+    )
+
+    assert found == [matching]
+
+
+async def test_find_recent_excludes_events_outside_the_window():
+    repository = InMemoryEventRepository()
+    stale_ts = datetime.now(timezone.utc) - timedelta(hours=48)
+    await repository.save_if_new(Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=stale_ts, check_name="ci/build",
+    ))
+
+    found = await repository.find_recent(
+        1, "acme/widgets", "abc123", "ci/build", EventType.BUILD_FAILURE,
+        datetime.now(timezone.utc) - timedelta(hours=24),
+    )
+
+    assert found == []
+
+
+async def test_find_recent_excludes_a_different_check_name():
+    repository = InMemoryEventRepository()
+    now = datetime.now(timezone.utc)
+    await repository.save_if_new(Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=now, check_name="ci/lint",
+    ))
+
+    found = await repository.find_recent(
+        1, "acme/widgets", "abc123", "ci/build", EventType.BUILD_FAILURE, now - timedelta(hours=1)
+    )
+
+    assert found == []
+
+
+async def test_retype_changes_the_event_type_in_place():
+    repository = InMemoryEventRepository()
+    now = datetime.now(timezone.utc)
+    original = Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=now, check_name="ci/build",
+    )
+    await repository.save_if_new(original)
+
+    retyped = await repository.retype(original, EventType.FLAKY_TEST)
+
+    assert retyped is True
+    assert await repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "@org/team-a") is None
+    stored = await repository.get(1, "acme/widgets", "abc123", EventType.FLAKY_TEST, "@org/team-a")
+    assert stored is not None
+    assert stored.ts == now
+    assert stored.check_name == "ci/build"
+
+
+async def test_retype_is_a_noop_when_the_source_event_is_missing():
+    repository = InMemoryEventRepository()
+    missing = Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=datetime.now(timezone.utc),
+    )
+
+    assert await repository.retype(missing, EventType.FLAKY_TEST) is False
+
+
+async def test_retype_is_a_noop_when_the_target_already_exists():
+    repository = InMemoryEventRepository()
+    now = datetime.now(timezone.utc)
+    original = Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=now, check_name="ci/build",
+    )
+    already_flaky = Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.FLAKY_TEST, owner="@org/team-a", ts=now, check_name="ci/build",
+    )
+    await repository.save_if_new(original)
+    await repository.save_if_new(already_flaky)
+
+    assert await repository.retype(original, EventType.FLAKY_TEST) is False
+
+
 async def test_daily_counts_since_excludes_other_owners_types_installations_and_stale_events():
     repository = InMemoryEventRepository()
     now = datetime.now(timezone.utc)
