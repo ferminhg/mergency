@@ -20,7 +20,7 @@ Four branches already, and the roadmap keeps adding webhook-driven work: ADR 000
 
 ## Status
 
-📋 proposed
+✅ accepted
 
 ## Considered Options
 
