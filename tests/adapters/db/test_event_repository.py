@@ -20,6 +20,41 @@ def _event(sha: str = "abc123", owner: str = "@org/team-a", ts: datetime | None 
     )
 
 
+async def test_save_if_new_persists_check_name(db_engine):
+    repository = SqlAlchemyEventRepository(db_engine)
+    event = Event(
+        installation_id=1,
+        repo="acme/widgets",
+        sha="abc123",
+        event_type=EventType.BUILD_FAILURE,
+        owner="@org/team-a",
+        ts=datetime.now(timezone.utc),
+        check_name="ci/build",
+    )
+
+    await repository.save_if_new(event)
+
+    stored = await repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "@org/team-a")
+    assert stored.check_name == "ci/build"
+
+
+async def test_save_if_new_persists_null_check_name_for_revert_events(db_engine):
+    repository = SqlAlchemyEventRepository(db_engine)
+    event = Event(
+        installation_id=1,
+        repo="acme/widgets",
+        sha="sha1",
+        event_type=EventType.REVERT,
+        owner="@org/team-a",
+        ts=datetime.now(timezone.utc),
+    )
+
+    await repository.save_if_new(event)
+
+    stored = await repository.get(1, "acme/widgets", "sha1", EventType.REVERT, "@org/team-a")
+    assert stored.check_name is None
+
+
 async def test_save_if_new_persists_and_reports_new(db_engine):
     repository = SqlAlchemyEventRepository(db_engine)
 

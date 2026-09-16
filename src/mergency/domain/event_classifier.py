@@ -36,6 +36,7 @@ class EventClassifier:
             event_type=EventType.BUILD_FAILURE,
             owner=None,
             ts=signal.completed_at,
+            check_name=signal.check_name,
         )
 
     def _classify_push(self, signal: PushSignal) -> Event | None:

@@ -27,6 +27,7 @@ class SqlAlchemyEventRepository:
                         event_type=event.event_type.value,
                         owner=event.owner,
                         ts=event.ts,
+                        check_name=event.check_name,
                     )
                 )
         except IntegrityError as error:
@@ -104,4 +105,5 @@ def _row_to_event(row) -> Event:
         event_type=EventType(row.event_type),
         owner=row.owner,
         ts=row.ts,
+        check_name=row.check_name,
     )

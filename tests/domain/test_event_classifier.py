@@ -60,6 +60,18 @@ async def test_ignores_check_run_on_feature_branch(classifier):
     assert await classifier.classify(_check_run_signal(head_branch="feature-x")) is None
 
 
+async def test_build_failure_event_carries_the_check_name(classifier):
+    event = await classifier.classify(_check_run_signal(check_name="ci/integration"))
+
+    assert event.check_name == "ci/integration"
+
+
+async def test_revert_event_has_no_check_name(classifier):
+    event = await classifier.classify(_push_signal())
+
+    assert event.check_name is None
+
+
 async def test_classifies_revert_push_on_default_branch(classifier):
     event = await classifier.classify(_push_signal())
 

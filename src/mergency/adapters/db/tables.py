@@ -12,6 +12,7 @@ events_table = sa.Table(
     sa.Column("event_type", sa.String, nullable=False),
     sa.Column("owner", sa.String, nullable=False),
     sa.Column("ts", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("check_name", sa.String, nullable=True),
     sa.UniqueConstraint(
         "installation_id", "repo", "sha", "event_type", "owner", name="ux_events_dedupe_key"
     ),
