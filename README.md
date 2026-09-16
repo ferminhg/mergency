@@ -79,7 +79,7 @@ budget:
 - [x] Budget calculation over rolling window
 - [x] PR comment bot
 - [x] Historical query endpoint/view
-- [ ] v2: flaky test signal
+- [x] v2: flaky test signal
 - [x] v2: deploy-to-incident traceability
 - [ ] v3: configurable consequence policy engine (opt-in)
 
