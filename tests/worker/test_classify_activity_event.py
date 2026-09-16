@@ -1,11 +1,11 @@
 import asyncio
 
-from mergency.adapters.memory.event_repository import InMemoryEventRepository
+from mergency.adapters.memory.activity_event_repository import InMemoryActivityEventRepository
 from mergency.adapters.memory.tenant_config_repository import InMemoryTenantConfigRepository
 from mergency.domain.config_resolver import ConfigResolver
 from mergency.domain.event_classifier import EventClassifier
 from mergency.domain.flaky_test_detector import FlakyTestDetector
-from mergency.domain.models.event_type import EventType
+from mergency.domain.models.activity_event_type import ActivityEventType
 from mergency.domain.ownership_resolver import OwnershipResolver
 from mergency.worker import classify_activity_event as task_module
 
@@ -35,9 +35,9 @@ class _StubChangedFilesProvider:
 
 
 def _wire(monkeypatch, *, codeowners_by_path=None, changed_files=None):
-    event_repository = InMemoryEventRepository()
+    event_repository = InMemoryActivityEventRepository()
     monkeypatch.setattr(task_module, "get_event_classifier", lambda: EventClassifier())
-    monkeypatch.setattr(task_module, "get_event_repository", lambda: event_repository)
+    monkeypatch.setattr(task_module, "get_activity_event_repository", lambda: event_repository)
     monkeypatch.setattr(
         task_module,
         "get_config_resolver",
@@ -108,7 +108,7 @@ def test_build_failure_is_persisted_with_owner_from_commits_api(monkeypatch):
     task_module.classify_activity_event("check_run", _check_run_payload())
 
     stored = asyncio.run(
-        event_repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "@org/team-a")
+        event_repository.get(1, "acme/widgets", "abc123", ActivityEventType.BUILD_FAILURE, "@org/team-a")
     )
     assert stored is not None
 
@@ -119,7 +119,7 @@ def test_revert_is_persisted_with_owner_from_push_commit_files(monkeypatch):
     task_module.classify_activity_event("push", _push_payload())
 
     stored = asyncio.run(
-        event_repository.get(1, "acme/widgets", "sha1", EventType.REVERT, "@org/team-b")
+        event_repository.get(1, "acme/widgets", "sha1", ActivityEventType.REVERT, "@org/team-b")
     )
     assert stored is not None
 
@@ -134,10 +134,10 @@ def test_fans_out_into_one_row_per_distinct_owning_team(monkeypatch):
     task_module.classify_activity_event("check_run", _check_run_payload())
 
     stored_a = asyncio.run(
-        event_repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "@org/team-a")
+        event_repository.get(1, "acme/widgets", "abc123", ActivityEventType.BUILD_FAILURE, "@org/team-a")
     )
     stored_b = asyncio.run(
-        event_repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "@org/team-b")
+        event_repository.get(1, "acme/widgets", "abc123", ActivityEventType.BUILD_FAILURE, "@org/team-b")
     )
     assert stored_a is not None
     assert stored_b is not None
@@ -149,7 +149,7 @@ def test_falls_back_to_default_team_when_no_codeowners_match(monkeypatch):
     task_module.classify_activity_event("check_run", _check_run_payload())
 
     stored = asyncio.run(
-        event_repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "unassigned")
+        event_repository.get(1, "acme/widgets", "abc123", ActivityEventType.BUILD_FAILURE, "unassigned")
     )
     assert stored is not None
 
@@ -165,7 +165,7 @@ def test_classify_activity_event_is_idempotent_across_redelivery(monkeypatch):
     task_module.classify_activity_event("check_run", _check_run_payload())
 
     stored = asyncio.run(
-        event_repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "@org/team-a")
+        event_repository.get(1, "acme/widgets", "abc123", ActivityEventType.BUILD_FAILURE, "@org/team-a")
     )
     assert stored is not None
 
@@ -184,10 +184,10 @@ def test_a_successful_rerun_reclassifies_the_prior_failure_as_flaky(monkeypatch)
     )
 
     assert asyncio.run(
-        event_repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "@org/team-a")
+        event_repository.get(1, "acme/widgets", "abc123", ActivityEventType.BUILD_FAILURE, "@org/team-a")
     ) is None
     assert asyncio.run(
-        event_repository.get(1, "acme/widgets", "abc123", EventType.FLAKY_TEST, "@org/team-a")
+        event_repository.get(1, "acme/widgets", "abc123", ActivityEventType.FLAKY_TEST, "@org/team-a")
     ) is not None
 
 
@@ -205,7 +205,7 @@ def test_a_successful_rerun_outside_the_correlation_window_does_not_reclassify(m
     )
 
     assert asyncio.run(
-        event_repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "@org/team-a")
+        event_repository.get(1, "acme/widgets", "abc123", ActivityEventType.BUILD_FAILURE, "@org/team-a")
     ) is not None
 
 
@@ -223,7 +223,7 @@ def test_a_successful_rerun_for_a_different_check_name_does_not_reclassify(monke
     )
 
     assert asyncio.run(
-        event_repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "@org/team-a")
+        event_repository.get(1, "acme/widgets", "abc123", ActivityEventType.BUILD_FAILURE, "@org/team-a")
     ) is not None
 
 

@@ -2,14 +2,14 @@ import asyncio
 from datetime import datetime
 
 from mergency.api.deps import (
+    get_activity_event_repository,
     get_changed_files_provider,
     get_commit_range_provider,
     get_config_resolver,
-    get_event_repository,
     get_ownership_resolver,
 )
-from mergency.domain.models.event import Event
-from mergency.domain.models.event_type import EventType
+from mergency.domain.models.activity_event import ActivityEvent
+from mergency.domain.models.activity_event_type import ActivityEventType
 from mergency.worker.celery_app import celery_app
 
 
@@ -49,7 +49,7 @@ async def _correlate_resolve_and_persist(
         installation_id, repo, base_sha, head_sha
     )
     config = await get_config_resolver().resolve(installation_id, repo)
-    event_repository = get_event_repository()
+    event_repository = get_activity_event_repository()
 
     for sha in shas:
         changed_files = await get_changed_files_provider().files_changed_in_commit(
@@ -60,11 +60,11 @@ async def _correlate_resolve_and_persist(
         )
         for owner in owners:
             await event_repository.save_if_new(
-                Event(
+                ActivityEvent(
                     installation_id=installation_id,
                     repo=repo,
                     sha=sha,
-                    event_type=EventType.INCIDENT,
+                    event_type=ActivityEventType.INCIDENT,
                     owner=owner,
                     ts=occurred_at,
                 )
