@@ -1,4 +1,5 @@
 import asyncio
+import dataclasses
 from datetime import date, datetime, timezone
 
 from mergency.domain.models.daily_event_count import DailyEventCount
@@ -85,3 +86,15 @@ class InMemoryEventRepository:
                 and event.event_type == event_type
                 and event.ts >= since
             ]
+
+    async def retype(self, event: Event, new_type: EventType) -> bool:
+        old_key = (event.installation_id, event.repo, event.sha, event.event_type, event.owner)
+        new_key = (event.installation_id, event.repo, event.sha, new_type, event.owner)
+        async with self._lock:
+            if old_key not in self._events:
+                return False
+            if new_key in self._events:
+                return False
+            retyped = dataclasses.replace(self._events.pop(old_key), event_type=new_type)
+            self._events[new_key] = retyped
+            return True

@@ -187,3 +187,38 @@ async def test_find_recent_excludes_events_outside_the_window(db_engine):
     )
 
     assert found == []
+
+
+async def test_retype_changes_the_event_type_in_place(db_engine):
+    repository = SqlAlchemyEventRepository(db_engine)
+    now = datetime.now(timezone.utc)
+    original = Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=now, check_name="ci/build",
+    )
+    await repository.save_if_new(original)
+
+    retyped = await repository.retype(original, EventType.FLAKY_TEST)
+
+    assert retyped is True
+    assert await repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "@org/team-a") is None
+    stored = await repository.get(1, "acme/widgets", "abc123", EventType.FLAKY_TEST, "@org/team-a")
+    assert stored is not None
+    assert stored.check_name == "ci/build"
+
+
+async def test_retype_is_a_noop_when_the_target_already_exists(db_engine):
+    repository = SqlAlchemyEventRepository(db_engine)
+    now = datetime.now(timezone.utc)
+    original = Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=now, check_name="ci/build",
+    )
+    already_flaky = Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.FLAKY_TEST, owner="@org/team-a", ts=now, check_name="ci/build",
+    )
+    await repository.save_if_new(original)
+    await repository.save_if_new(already_flaky)
+
+    assert await repository.retype(original, EventType.FLAKY_TEST) is False

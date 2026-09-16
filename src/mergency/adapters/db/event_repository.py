@@ -2,7 +2,7 @@ from datetime import datetime
 
 import asyncpg
 import sqlalchemy as sa
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -119,6 +119,26 @@ class SqlAlchemyEventRepository:
                 )
             ).all()
         return [_row_to_event(row) for row in rows]
+
+    async def retype(self, event: Event, new_type: EventType) -> bool:
+        try:
+            async with self._engine.begin() as conn:
+                result = await conn.execute(
+                    update(events_table)
+                    .where(
+                        events_table.c.installation_id == event.installation_id,
+                        events_table.c.repo == event.repo,
+                        events_table.c.sha == event.sha,
+                        events_table.c.event_type == event.event_type.value,
+                        events_table.c.owner == event.owner,
+                    )
+                    .values(event_type=new_type.value)
+                )
+        except IntegrityError as error:
+            if isinstance(error.orig.__cause__, asyncpg.exceptions.UniqueViolationError):
+                return False
+            raise
+        return result.rowcount > 0
 
 
 def _row_to_event(row) -> Event:
