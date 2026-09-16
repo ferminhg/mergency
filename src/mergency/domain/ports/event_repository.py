@@ -28,3 +28,15 @@ class EventRepository(Protocol):
         event_types: list[EventType],
         since: datetime,
     ) -> list[DailyEventCount]: ...
+
+    async def find_recent(
+        self,
+        installation_id: int,
+        repo: str,
+        sha: str,
+        check_name: str,
+        event_type: EventType,
+        since: datetime,
+    ) -> list[Event]: ...
+
+    async def retype(self, event: Event, new_type: EventType) -> bool: ...

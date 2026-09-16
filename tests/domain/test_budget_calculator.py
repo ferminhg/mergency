@@ -80,6 +80,37 @@ async def test_status_for_uses_hardcoded_defaults_when_no_config_exists():
     assert status.remaining_pct == 100.0
 
 
+async def test_status_for_excludes_flaky_test_events_from_consumption():
+    event_repository = InMemoryEventRepository()
+    config_repository = InMemoryTenantConfigRepository()
+    await config_repository.upsert(
+        TenantConfig(1, rolling_window_days=28, default_team="unassigned", max_events_per_window=5, warn_threshold_pct=50)
+    )
+    now = datetime.now(timezone.utc)
+    await event_repository.save_if_new(_event(EventType.FLAKY_TEST, "sha1", "@org/backend-team", now))
+    calculator = BudgetCalculator(event_repository, config_repository)
+
+    status = await calculator.status_for(1, "@org/backend-team")
+
+    assert status.consumed == 0
+    assert status.remaining_pct == 100.0
+
+
+async def test_status_for_counts_incident_events_alongside_build_failure_and_revert():
+    event_repository = InMemoryEventRepository()
+    config_repository = InMemoryTenantConfigRepository()
+    await config_repository.upsert(
+        TenantConfig(1, rolling_window_days=28, default_team="unassigned", max_events_per_window=5, warn_threshold_pct=50)
+    )
+    now = datetime.now(timezone.utc)
+    await event_repository.save_if_new(_event(EventType.INCIDENT, "sha1", "@org/backend-team", now))
+    calculator = BudgetCalculator(event_repository, config_repository)
+
+    status = await calculator.status_for(1, "@org/backend-team")
+
+    assert status.consumed == 1
+
+
 async def test_status_for_returns_zero_percent_when_limit_is_non_positive():
     event_repository = InMemoryEventRepository()
     config_repository = InMemoryTenantConfigRepository()

@@ -1,5 +1,6 @@
 import json
 import logging
+from collections.abc import Awaitable, Callable
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 
@@ -17,6 +18,8 @@ router = APIRouter()
 
 _PR_TRIGGER_ACTIONS = {"opened", "synchronize", "reopened"}
 
+EventHandler = Callable[[str, dict], Awaitable[None]]
+
 
 @router.post("/webhooks/github")
 async def receive_webhook(
@@ -33,19 +36,19 @@ async def receive_webhook(
 
     payload = json.loads(body)
 
-    if x_github_event == "installation":
+    async def _installation_handler(_event_type: str, payload: dict) -> None:
         await _handle_installation_event(payload, installation_service)
-    elif x_github_event == "installation_repositories":
-        logger.info("installation_repositories event acknowledged, no-op for now")
-    elif x_github_event in ("push", "check_run"):
-        classify_activity_event.delay(x_github_event, payload)
-    elif x_github_event == "pull_request" and payload.get("action") in _PR_TRIGGER_ACTIONS:
-        evaluate_pr_budget.delay(payload)
-    else:
-        logger.info(
-            "event acknowledged, processing not yet implemented",
-            extra={"event": x_github_event},
-        )
+
+    handlers: dict[str, EventHandler] = {
+        "installation": _installation_handler,
+        "installation_repositories": _handle_installation_repositories_event,
+        "push": _handle_activity_event,
+        "check_run": _handle_activity_event,
+        "pull_request": _handle_pull_request_event,
+    }
+
+    handler = handlers.get(x_github_event, _handle_unimplemented_event)
+    await handler(x_github_event, payload)
 
     return {"status": "ok"}
 
@@ -69,3 +72,23 @@ async def _handle_installation_event(
         return
 
     await installation_service.handle(command)
+
+
+async def _handle_installation_repositories_event(_event_type: str, _payload: dict) -> None:
+    logger.info("installation_repositories event acknowledged, no-op for now")
+
+
+async def _handle_activity_event(event_type: str, payload: dict) -> None:
+    classify_activity_event.delay(event_type, payload)
+
+
+async def _handle_pull_request_event(_event_type: str, payload: dict) -> None:
+    if payload.get("action") in _PR_TRIGGER_ACTIONS:
+        evaluate_pr_budget.delay(payload)
+
+
+async def _handle_unimplemented_event(event_type: str, _payload: dict) -> None:
+    logger.info(
+        "event acknowledged, processing not yet implemented",
+        extra={"event": event_type},
+    )

@@ -2,7 +2,7 @@ from datetime import datetime
 
 import asyncpg
 import sqlalchemy as sa
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -27,6 +27,7 @@ class SqlAlchemyEventRepository:
                         event_type=event.event_type.value,
                         owner=event.owner,
                         ts=event.ts,
+                        check_name=event.check_name,
                     )
                 )
         except IntegrityError as error:
@@ -95,6 +96,50 @@ class SqlAlchemyEventRepository:
             rows = result.all()
         return [DailyEventCount(day=row.day, count=row.count) for row in rows]
 
+    async def find_recent(
+        self,
+        installation_id: int,
+        repo: str,
+        sha: str,
+        check_name: str,
+        event_type: EventType,
+        since: datetime,
+    ) -> list[Event]:
+        async with self._engine.connect() as conn:
+            rows = (
+                await conn.execute(
+                    select(events_table).where(
+                        events_table.c.installation_id == installation_id,
+                        events_table.c.repo == repo,
+                        events_table.c.sha == sha,
+                        events_table.c.check_name == check_name,
+                        events_table.c.event_type == event_type.value,
+                        events_table.c.ts >= since,
+                    )
+                )
+            ).all()
+        return [_row_to_event(row) for row in rows]
+
+    async def retype(self, event: Event, new_type: EventType) -> bool:
+        try:
+            async with self._engine.begin() as conn:
+                result = await conn.execute(
+                    update(events_table)
+                    .where(
+                        events_table.c.installation_id == event.installation_id,
+                        events_table.c.repo == event.repo,
+                        events_table.c.sha == event.sha,
+                        events_table.c.event_type == event.event_type.value,
+                        events_table.c.owner == event.owner,
+                    )
+                    .values(event_type=new_type.value)
+                )
+        except IntegrityError as error:
+            if isinstance(error.orig.__cause__, asyncpg.exceptions.UniqueViolationError):
+                return False
+            raise
+        return result.rowcount > 0
+
 
 def _row_to_event(row) -> Event:
     return Event(
@@ -104,4 +149,5 @@ def _row_to_event(row) -> Event:
         event_type=EventType(row.event_type),
         owner=row.owner,
         ts=row.ts,
+        check_name=row.check_name,
     )

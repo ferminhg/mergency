@@ -7,6 +7,7 @@ class CheckRunSignal:
     installation_id: int
     repo: str
     sha: str
+    check_name: str
     action: str
     conclusion: str | None
     head_branch: str

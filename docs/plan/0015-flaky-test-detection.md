@@ -12,7 +12,7 @@
 
 ## Status
 
-proposed
+implemented
 
 ## Context
 
@@ -74,7 +74,11 @@ tests/
 - Modify: `src/mergency/domain/models/event_type.py`
 - Test: `tests/domain/test_budget_calculator.py`
 
+<<<<<<< HEAD
 - [ ] **Step 1: Write the failing regression test**
+=======
+- [x] **Step 1: Write the failing regression test**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Add to `tests/domain/test_budget_calculator.py`:
 
@@ -95,12 +99,20 @@ async def test_status_for_excludes_flaky_test_events_from_consumption():
     assert status.remaining_pct == 100.0
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 2: Run test to verify it fails**
+=======
+- [x] **Step 2: Run test to verify it fails**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/domain/test_budget_calculator.py::test_status_for_excludes_flaky_test_events_from_consumption -v`
 Expected: FAIL with `AttributeError: FLAKY_TEST` (the enum member doesn't exist yet).
 
+<<<<<<< HEAD
 - [ ] **Step 3: Add the enum member**
+=======
+- [x] **Step 3: Add the enum member**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 In `src/mergency/domain/models/event_type.py`:
 
@@ -114,12 +126,20 @@ class EventType(str, Enum):
     FLAKY_TEST = "flaky_test"
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 4: Run test to verify it passes**
+=======
+- [x] **Step 4: Run test to verify it passes**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/domain/test_budget_calculator.py -v`
 Expected: PASS (all tests, including the new one — `BudgetCalculator._COUNTED_EVENT_TYPES` is unchanged, so `FLAKY_TEST` is excluded by default, exactly as ADR 0010 requires).
 
+<<<<<<< HEAD
 - [ ] **Step 5: Commit**
+=======
+- [x] **Step 5: Commit**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 ```bash
 git add src/mergency/domain/models/event_type.py tests/domain/test_budget_calculator.py
@@ -135,7 +155,11 @@ git commit -m "feat: reserve EventType.FLAKY_TEST, excluded from budget by defau
 - Modify: `src/mergency/adapters/github/check_run_signal_parser.py`
 - Test: `tests/adapters/github/test_check_run_signal_parser.py`
 
+<<<<<<< HEAD
 - [ ] **Step 1: Write the failing test**
+=======
+- [x] **Step 1: Write the failing test**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Add to `tests/adapters/github/test_check_run_signal_parser.py`:
 
@@ -164,12 +188,20 @@ def _payload(action="completed", conclusion="failure", head_branch="main", defau
     }
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 2: Run test to verify it fails**
+=======
+- [x] **Step 2: Run test to verify it fails**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/adapters/github/test_check_run_signal_parser.py::test_parses_check_name -v`
 Expected: FAIL with `AttributeError: 'CheckRunSignal' object has no attribute 'check_name'`.
 
+<<<<<<< HEAD
 - [ ] **Step 3: Add the field and parse it**
+=======
+- [x] **Step 3: Add the field and parse it**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 `src/mergency/domain/models/check_run_signal.py`:
 
@@ -217,7 +249,11 @@ def parse_check_run_signal(payload: dict) -> CheckRunSignal:
     )
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 4: Fix the now-broken `CheckRunSignal(...)` call sites**
+=======
+- [x] **Step 4: Fix the now-broken `CheckRunSignal(...)` call sites**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 `check_name` is a required positional-by-keyword field with no default, so every existing test that constructs `CheckRunSignal(...)` directly needs a `check_name` kwarg. Update `tests/domain/test_event_classifier.py`'s `_check_run_signal` helper:
 
@@ -240,12 +276,20 @@ def _check_run_signal(**overrides) -> CheckRunSignal:
 
 Also update `tests/worker/test_classify_activity_event.py`'s `_check_run_payload` fixture (used indirectly via the parser) to include `"name": "ci/build"` in its `check_run` dict — same change as Step 1 above, applied to that file's payload builder.
 
+<<<<<<< HEAD
 - [ ] **Step 5: Run full test suite to verify nothing else broke**
+=======
+- [x] **Step 5: Run full test suite to verify nothing else broke**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest -v`
 Expected: PASS.
 
+<<<<<<< HEAD
 - [ ] **Step 6: Commit**
+=======
+- [x] **Step 6: Commit**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 ```bash
 git add src/mergency/domain/models/check_run_signal.py src/mergency/adapters/github/check_run_signal_parser.py tests/adapters/github/test_check_run_signal_parser.py tests/domain/test_event_classifier.py tests/worker/test_classify_activity_event.py
@@ -265,7 +309,11 @@ git commit -m "feat: parse check_run.name into CheckRunSignal.check_name"
 - Test: `tests/domain/test_event_classifier.py`
 - Test: `tests/adapters/db/test_event_repository.py`
 
+<<<<<<< HEAD
 - [ ] **Step 1: Write the failing domain test**
+=======
+- [x] **Step 1: Write the failing domain test**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Add to `tests/domain/test_event_classifier.py`:
 
@@ -282,12 +330,20 @@ async def test_revert_event_has_no_check_name(classifier):
     assert event.check_name is None
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 2: Run test to verify it fails**
+=======
+- [x] **Step 2: Run test to verify it fails**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/domain/test_event_classifier.py -v`
 Expected: FAIL with `AttributeError: 'Event' object has no attribute 'check_name'`.
 
+<<<<<<< HEAD
 - [ ] **Step 3: Add `check_name` to the `Event` model**
+=======
+- [x] **Step 3: Add `check_name` to the `Event` model**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 `src/mergency/domain/models/event.py`:
 
@@ -309,7 +365,11 @@ class Event:
     check_name: str | None = None
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 4: Populate it from `EventClassifier._classify_check_run`**
+=======
+- [x] **Step 4: Populate it from `EventClassifier._classify_check_run`**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 In `src/mergency/domain/event_classifier.py`, update the `Event(...)` construction inside `_classify_check_run`:
 
@@ -336,12 +396,20 @@ In `src/mergency/domain/event_classifier.py`, update the `Event(...)` constructi
 
 `_classify_push` is unchanged — `check_name` defaults to `None` for `REVERT` events, which is correct (reverts aren't check-run-scoped).
 
+<<<<<<< HEAD
 - [ ] **Step 5: Run test to verify it passes**
+=======
+- [x] **Step 5: Run test to verify it passes**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/domain/test_event_classifier.py -v`
 Expected: PASS.
 
+<<<<<<< HEAD
 - [ ] **Step 6: Write the failing persistence test**
+=======
+- [x] **Step 6: Write the failing persistence test**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Add to `tests/adapters/db/test_event_repository.py`:
 
@@ -381,12 +449,20 @@ async def test_save_if_new_persists_null_check_name_for_revert_events(db_engine)
     assert stored.check_name is None
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 7: Run test to verify it fails**
+=======
+- [x] **Step 7: Run test to verify it fails**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/adapters/db/test_event_repository.py -v`
 Expected: FAIL — `sa.exc.CompileError` or similar, since `events_table` has no `check_name` column yet.
 
+<<<<<<< HEAD
 - [ ] **Step 8: Add the column and update the adapter**
+=======
+- [x] **Step 8: Add the column and update the adapter**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 `src/mergency/adapters/db/tables.py` — add one column to `events_table` (after `owner`, before `ts` is fine, but keep it simple and append at the end to avoid reshuffling the existing positional column list):
 
@@ -460,12 +536,20 @@ def _row_to_event(row) -> Event:
     )
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 9: Run test to verify it passes**
+=======
+- [x] **Step 9: Run test to verify it passes**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/adapters/db/test_event_repository.py -v`
 Expected: PASS.
 
+<<<<<<< HEAD
 - [ ] **Step 10: Generate and fill in the Alembic migration**
+=======
+- [x] **Step 10: Generate and fill in the Alembic migration**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app alembic revision -m "add_check_name_to_events"`
 
@@ -480,17 +564,29 @@ def downgrade() -> None:
     op.drop_column("events", "check_name")
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 11: Apply the migration locally and verify**
+=======
+- [x] **Step 11: Apply the migration locally and verify**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app alembic upgrade head`
 Expected: migration applies cleanly with no errors.
 
+<<<<<<< HEAD
 - [ ] **Step 12: Run the full suite**
+=======
+- [x] **Step 12: Run the full suite**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest -v`
 Expected: PASS.
 
+<<<<<<< HEAD
 - [ ] **Step 13: Commit**
+=======
+- [x] **Step 13: Commit**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 ```bash
 git add src/mergency/domain/models/event.py src/mergency/domain/event_classifier.py src/mergency/adapters/db/tables.py src/mergency/adapters/db/event_repository.py alembic/versions/*_add_check_name_to_events.py tests/domain/test_event_classifier.py tests/adapters/db/test_event_repository.py
@@ -508,7 +604,11 @@ git commit -m "feat: persist check_name on events"
 - Test: `tests/adapters/memory/test_event_repository.py`
 - Test: `tests/adapters/db/test_event_repository.py`
 
+<<<<<<< HEAD
 - [ ] **Step 1: Write the failing in-memory test**
+=======
+- [x] **Step 1: Write the failing in-memory test**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Add to `tests/adapters/memory/test_event_repository.py`:
 
@@ -562,12 +662,20 @@ async def test_find_recent_excludes_a_different_check_name():
 
 Check that this test file already imports `timedelta`; if not, add it to the existing `from datetime import ...` line.
 
+<<<<<<< HEAD
 - [ ] **Step 2: Run test to verify it fails**
+=======
+- [x] **Step 2: Run test to verify it fails**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/adapters/memory/test_event_repository.py -v`
 Expected: FAIL with `AttributeError: 'InMemoryEventRepository' object has no attribute 'find_recent'`.
 
+<<<<<<< HEAD
 - [ ] **Step 3: Add the port method**
+=======
+- [x] **Step 3: Add the port method**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 `src/mergency/domain/ports/event_repository.py` — add to the `EventRepository` Protocol:
 
@@ -583,7 +691,11 @@ Expected: FAIL with `AttributeError: 'InMemoryEventRepository' object has no att
     ) -> list[Event]: ...
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 4: Implement it in `InMemoryEventRepository`**
+=======
+- [x] **Step 4: Implement it in `InMemoryEventRepository`**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 `src/mergency/adapters/memory/event_repository.py` — add the method:
 
@@ -610,12 +722,20 @@ Expected: FAIL with `AttributeError: 'InMemoryEventRepository' object has no att
             ]
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 5: Run test to verify it passes**
+=======
+- [x] **Step 5: Run test to verify it passes**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/adapters/memory/test_event_repository.py -v`
 Expected: PASS.
 
+<<<<<<< HEAD
 - [ ] **Step 6: Write the failing DB test**
+=======
+- [x] **Step 6: Write the failing DB test**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Add to `tests/adapters/db/test_event_repository.py`:
 
@@ -653,12 +773,20 @@ async def test_find_recent_excludes_events_outside_the_window(db_engine):
     assert found == []
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 7: Run test to verify it fails**
+=======
+- [x] **Step 7: Run test to verify it fails**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/adapters/db/test_event_repository.py -v`
 Expected: FAIL with `AttributeError: 'SqlAlchemyEventRepository' object has no attribute 'find_recent'`.
 
+<<<<<<< HEAD
 - [ ] **Step 8: Implement it in `SqlAlchemyEventRepository`**
+=======
+- [x] **Step 8: Implement it in `SqlAlchemyEventRepository`**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 `src/mergency/adapters/db/event_repository.py` — add the method:
 
@@ -688,12 +816,20 @@ Expected: FAIL with `AttributeError: 'SqlAlchemyEventRepository' object has no a
         return [_row_to_event(row) for row in rows]
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 9: Run test to verify it passes**
+=======
+- [x] **Step 9: Run test to verify it passes**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/adapters/db/test_event_repository.py -v`
 Expected: PASS.
 
+<<<<<<< HEAD
 - [ ] **Step 10: Commit**
+=======
+- [x] **Step 10: Commit**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 ```bash
 git add src/mergency/domain/ports/event_repository.py src/mergency/adapters/memory/event_repository.py src/mergency/adapters/db/event_repository.py tests/adapters/memory/test_event_repository.py tests/adapters/db/test_event_repository.py
@@ -711,7 +847,11 @@ git commit -m "feat: add EventRepository.find_recent for check-run correlation l
 - Test: `tests/adapters/memory/test_event_repository.py`
 - Test: `tests/adapters/db/test_event_repository.py`
 
+<<<<<<< HEAD
 - [ ] **Step 1: Write the failing in-memory test**
+=======
+- [x] **Step 1: Write the failing in-memory test**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Add to `tests/adapters/memory/test_event_repository.py`:
 
@@ -762,12 +902,20 @@ async def test_retype_is_a_noop_when_the_target_already_exists():
     assert await repository.retype(original, EventType.FLAKY_TEST) is False
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 2: Run test to verify it fails**
+=======
+- [x] **Step 2: Run test to verify it fails**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/adapters/memory/test_event_repository.py -v`
 Expected: FAIL with `AttributeError: 'InMemoryEventRepository' object has no attribute 'retype'`.
 
+<<<<<<< HEAD
 - [ ] **Step 3: Add the port method**
+=======
+- [x] **Step 3: Add the port method**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 `src/mergency/domain/ports/event_repository.py` — add:
 
@@ -775,7 +923,11 @@ Expected: FAIL with `AttributeError: 'InMemoryEventRepository' object has no att
     async def retype(self, event: Event, new_type: EventType) -> bool: ...
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 4: Implement it in `InMemoryEventRepository`**
+=======
+- [x] **Step 4: Implement it in `InMemoryEventRepository`**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 `src/mergency/adapters/memory/event_repository.py` — add `import dataclasses` at the top, and the method:
 
@@ -793,12 +945,20 @@ Expected: FAIL with `AttributeError: 'InMemoryEventRepository' object has no att
             return True
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 5: Run test to verify it passes**
+=======
+- [x] **Step 5: Run test to verify it passes**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/adapters/memory/test_event_repository.py -v`
 Expected: PASS.
 
+<<<<<<< HEAD
 - [ ] **Step 6: Write the failing DB test**
+=======
+- [x] **Step 6: Write the failing DB test**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Add to `tests/adapters/db/test_event_repository.py`:
 
@@ -838,12 +998,20 @@ async def test_retype_is_a_noop_when_the_target_already_exists(db_engine):
     assert await repository.retype(original, EventType.FLAKY_TEST) is False
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 7: Run test to verify it fails**
+=======
+- [x] **Step 7: Run test to verify it fails**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/adapters/db/test_event_repository.py -v`
 Expected: FAIL with `AttributeError: 'SqlAlchemyEventRepository' object has no attribute 'retype'`.
 
+<<<<<<< HEAD
 - [ ] **Step 8: Implement it in `SqlAlchemyEventRepository`**
+=======
+- [x] **Step 8: Implement it in `SqlAlchemyEventRepository`**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 `src/mergency/adapters/db/event_repository.py` — add `update` to the `sqlalchemy` import (`from sqlalchemy import insert, select, update`), and the method:
 
@@ -871,12 +1039,20 @@ Expected: FAIL with `AttributeError: 'SqlAlchemyEventRepository' object has no a
 
 This relies on `ux_events_dedupe_key` to turn a collision with an already-`FLAKY_TEST` row into an `IntegrityError` — same pattern `save_if_new` already uses.
 
+<<<<<<< HEAD
 - [ ] **Step 9: Run test to verify it passes**
+=======
+- [x] **Step 9: Run test to verify it passes**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/adapters/db/test_event_repository.py -v`
 Expected: PASS.
 
+<<<<<<< HEAD
 - [ ] **Step 10: Commit**
+=======
+- [x] **Step 10: Commit**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 ```bash
 git add src/mergency/domain/ports/event_repository.py src/mergency/adapters/memory/event_repository.py src/mergency/adapters/db/event_repository.py tests/adapters/memory/test_event_repository.py tests/adapters/db/test_event_repository.py
@@ -891,7 +1067,11 @@ git commit -m "feat: add EventRepository.retype for in-place event reclassificat
 - Modify: `src/mergency/domain/event_classifier.py`
 - Test: `tests/domain/test_event_classifier.py`
 
+<<<<<<< HEAD
 - [ ] **Step 1: Write the failing test**
+=======
+- [x] **Step 1: Write the failing test**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Add to `tests/domain/test_event_classifier.py`:
 
@@ -920,12 +1100,20 @@ async def test_is_not_a_flaky_candidate_off_the_default_branch(classifier):
     assert classifier.is_flaky_candidate(signal) is False
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 2: Run test to verify it fails**
+=======
+- [x] **Step 2: Run test to verify it fails**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/domain/test_event_classifier.py -v`
 Expected: FAIL with `AttributeError: 'EventClassifier' object has no attribute 'is_flaky_candidate'`.
 
+<<<<<<< HEAD
 - [ ] **Step 3: Implement the method**
+=======
+- [x] **Step 3: Implement the method**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 `src/mergency/domain/event_classifier.py` — add a method to `EventClassifier` (the `classify` method and `_classify_check_run`/`_classify_push` are unchanged):
 
@@ -942,12 +1130,20 @@ Expected: FAIL with `AttributeError: 'EventClassifier' object has no attribute '
         return True
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 4: Run test to verify it passes**
+=======
+- [x] **Step 4: Run test to verify it passes**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/domain/test_event_classifier.py -v`
 Expected: PASS.
 
+<<<<<<< HEAD
 - [ ] **Step 5: Commit**
+=======
+- [x] **Step 5: Commit**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 ```bash
 git add src/mergency/domain/event_classifier.py tests/domain/test_event_classifier.py
@@ -962,7 +1158,11 @@ git commit -m "feat: recognize a successful check_run completion as a flaky-reru
 - Create: `src/mergency/domain/flaky_test_detector.py`
 - Test: `tests/domain/test_flaky_test_detector.py`
 
+<<<<<<< HEAD
 - [ ] **Step 1: Write the failing test**
+=======
+- [x] **Step 1: Write the failing test**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Create `tests/domain/test_flaky_test_detector.py`:
 
@@ -1057,12 +1257,20 @@ async def test_is_a_noop_when_there_is_no_prior_failure():
     assert reclassified == 0
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 2: Run test to verify it fails**
+=======
+- [x] **Step 2: Run test to verify it fails**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/domain/test_flaky_test_detector.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'mergency.domain.flaky_test_detector'`.
 
+<<<<<<< HEAD
 - [ ] **Step 3: Implement `FlakyTestDetector`**
+=======
+- [x] **Step 3: Implement `FlakyTestDetector`**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Create `src/mergency/domain/flaky_test_detector.py`:
 
@@ -1099,12 +1307,20 @@ class FlakyTestDetector:
         return reclassified
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 4: Run test to verify it passes**
+=======
+- [x] **Step 4: Run test to verify it passes**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/domain/test_flaky_test_detector.py -v`
 Expected: PASS.
 
+<<<<<<< HEAD
 - [ ] **Step 5: Commit**
+=======
+- [x] **Step 5: Commit**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 ```bash
 git add src/mergency/domain/flaky_test_detector.py tests/domain/test_flaky_test_detector.py
@@ -1120,7 +1336,11 @@ git commit -m "feat: add FlakyTestDetector domain service"
 - Modify: `src/mergency/worker/classify_activity_event.py`
 - Test: `tests/worker/test_classify_activity_event.py`
 
+<<<<<<< HEAD
 - [ ] **Step 1: Add DI wiring**
+=======
+- [x] **Step 1: Add DI wiring**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 `src/mergency/api/deps.py` — add the import and a cached factory, and register it in `reset_dependency_caches`:
 
@@ -1140,7 +1360,11 @@ In `reset_dependency_caches()`, add:
     get_flaky_test_detector.cache_clear()
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 2: Write the failing end-to-end test**
+=======
+- [x] **Step 2: Write the failing end-to-end test**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Add to `tests/worker/test_classify_activity_event.py`. First, extend `_check_run_payload` to accept overrides so success/rerun payloads can be built without duplicating the whole dict:
 
@@ -1238,12 +1462,20 @@ def test_a_successful_rerun_for_a_different_check_name_does_not_reclassify(monke
     ) is not None
 ```
 
+<<<<<<< HEAD
 - [ ] **Step 3: Run test to verify it fails**
+=======
+- [x] **Step 3: Run test to verify it fails**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/worker/test_classify_activity_event.py -v`
 Expected: FAIL — the success payload currently classifies to `None` and is silently dropped, so the `FLAKY_TEST` assertions fail (`BUILD_FAILURE` row still present, `FLAKY_TEST` row absent).
 
+<<<<<<< HEAD
 - [ ] **Step 4: Wire `FlakyTestDetector` into the worker task**
+=======
+- [x] **Step 4: Wire `FlakyTestDetector` into the worker task**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 `src/mergency/worker/classify_activity_event.py` — import the classifier's new capability is already available via `get_event_classifier()`; add the DI import and branch:
 
@@ -1282,18 +1514,30 @@ async def _classify_resolve_and_persist(signal: CheckRunSignal | PushSignal) -> 
 
 `_changed_files_for` is unchanged.
 
+<<<<<<< HEAD
 - [ ] **Step 5: Run test to verify it passes**
+=======
+- [x] **Step 5: Run test to verify it passes**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest tests/worker/test_classify_activity_event.py -v`
 Expected: PASS.
 
+<<<<<<< HEAD
 - [ ] **Step 6: Run the full suite and lint**
+=======
+- [x] **Step 6: Run the full suite and lint**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 Run: `docker compose run --rm app pytest -v`
 Run: `docker compose run --rm app ruff check .`
 Expected: both PASS.
 
+<<<<<<< HEAD
 - [ ] **Step 7: Commit**
+=======
+- [x] **Step 7: Commit**
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 
 ```bash
 git add src/mergency/api/deps.py src/mergency/worker/classify_activity_event.py tests/worker/test_classify_activity_event.py

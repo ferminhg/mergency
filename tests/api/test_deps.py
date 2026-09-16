@@ -123,3 +123,16 @@ def test_get_budget_history_query_is_cached_and_resettable():
     deps.reset_dependency_caches()
 
     assert deps.get_budget_history_query() is not first
+
+
+def test_get_commit_range_provider_is_cached_and_resettable(monkeypatch):
+    from mergency.adapters.github.commit_range_provider import GithubCommitRangeProvider
+
+    _set_required_env(monkeypatch, "test-app-id")
+    first = deps.get_commit_range_provider()
+    second = deps.get_commit_range_provider()
+    assert first is second
+    assert isinstance(first, GithubCommitRangeProvider)
+
+    deps.reset_dependency_caches()
+    assert deps.get_commit_range_provider() is not first

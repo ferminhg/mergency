@@ -7,6 +7,7 @@ def _payload(action="completed", conclusion="failure", head_branch="main", defau
     return {
         "action": action,
         "check_run": {
+            "name": "ci/build",
             "head_sha": "abc123",
             "conclusion": conclusion,
             "completed_at": "2026-09-14T10:00:00Z",
@@ -15,6 +16,12 @@ def _payload(action="completed", conclusion="failure", head_branch="main", defau
         "repository": {"full_name": "acme/widgets", "default_branch": default_branch},
         "installation": {"id": 1},
     }
+
+
+def test_parses_check_name():
+    signal = parse_check_run_signal(_payload())
+
+    assert signal.check_name == "ci/build"
 
 
 def test_parses_completed_failure_on_default_branch():

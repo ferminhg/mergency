@@ -12,3 +12,4 @@ class Event:
     event_type: EventType
     owner: str | None
     ts: datetime
+    check_name: str | None = None

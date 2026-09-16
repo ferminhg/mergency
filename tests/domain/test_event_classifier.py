@@ -19,6 +19,7 @@ def _check_run_signal(**overrides) -> CheckRunSignal:
         installation_id=1,
         repo="acme/widgets",
         sha="abc123",
+        check_name="ci/build",
         action="completed",
         conclusion="failure",
         head_branch="main",
@@ -57,6 +58,42 @@ async def test_ignores_success_conclusion(classifier):
 
 async def test_ignores_check_run_on_feature_branch(classifier):
     assert await classifier.classify(_check_run_signal(head_branch="feature-x")) is None
+
+
+async def test_build_failure_event_carries_the_check_name(classifier):
+    event = await classifier.classify(_check_run_signal(check_name="ci/integration"))
+
+    assert event.check_name == "ci/integration"
+
+
+async def test_revert_event_has_no_check_name(classifier):
+    event = await classifier.classify(_push_signal())
+
+    assert event.check_name is None
+
+
+async def test_is_flaky_candidate_for_a_successful_completion_on_default_branch(classifier):
+    signal = _check_run_signal(conclusion="success")
+
+    assert classifier.is_flaky_candidate(signal) is True
+
+
+async def test_is_not_a_flaky_candidate_when_not_completed(classifier):
+    signal = _check_run_signal(conclusion="success", action="in_progress")
+
+    assert classifier.is_flaky_candidate(signal) is False
+
+
+async def test_is_not_a_flaky_candidate_for_a_failure_conclusion(classifier):
+    signal = _check_run_signal(conclusion="failure")
+
+    assert classifier.is_flaky_candidate(signal) is False
+
+
+async def test_is_not_a_flaky_candidate_off_the_default_branch(classifier):
+    signal = _check_run_signal(conclusion="success", head_branch="feature-x")
+
+    assert classifier.is_flaky_candidate(signal) is False
 
 
 async def test_classifies_revert_push_on_default_branch(classifier):

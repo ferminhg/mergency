@@ -20,6 +20,41 @@ def _event(sha: str = "abc123", owner: str = "@org/team-a", ts: datetime | None 
     )
 
 
+async def test_save_if_new_persists_check_name(db_engine):
+    repository = SqlAlchemyEventRepository(db_engine)
+    event = Event(
+        installation_id=1,
+        repo="acme/widgets",
+        sha="abc123",
+        event_type=EventType.BUILD_FAILURE,
+        owner="@org/team-a",
+        ts=datetime.now(timezone.utc),
+        check_name="ci/build",
+    )
+
+    await repository.save_if_new(event)
+
+    stored = await repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "@org/team-a")
+    assert stored.check_name == "ci/build"
+
+
+async def test_save_if_new_persists_null_check_name_for_revert_events(db_engine):
+    repository = SqlAlchemyEventRepository(db_engine)
+    event = Event(
+        installation_id=1,
+        repo="acme/widgets",
+        sha="sha1",
+        event_type=EventType.REVERT,
+        owner="@org/team-a",
+        ts=datetime.now(timezone.utc),
+    )
+
+    await repository.save_if_new(event)
+
+    stored = await repository.get(1, "acme/widgets", "sha1", EventType.REVERT, "@org/team-a")
+    assert stored.check_name is None
+
+
 async def test_save_if_new_persists_and_reports_new(db_engine):
     repository = SqlAlchemyEventRepository(db_engine)
 
@@ -119,3 +154,71 @@ async def test_daily_counts_since_excludes_events_outside_the_window(db_engine):
     )
 
     assert buckets == []
+
+
+async def test_find_recent_returns_matching_events_within_window(db_engine):
+    repository = SqlAlchemyEventRepository(db_engine)
+    now = datetime.now(timezone.utc)
+    await repository.save_if_new(Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=now, check_name="ci/build",
+    ))
+
+    found = await repository.find_recent(
+        1, "acme/widgets", "abc123", "ci/build", EventType.BUILD_FAILURE,
+        now - timedelta(hours=1),
+    )
+
+    assert len(found) == 1
+    assert found[0].check_name == "ci/build"
+
+
+async def test_find_recent_excludes_events_outside_the_window(db_engine):
+    repository = SqlAlchemyEventRepository(db_engine)
+    stale_ts = datetime.now(timezone.utc) - timedelta(hours=48)
+    await repository.save_if_new(Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=stale_ts, check_name="ci/build",
+    ))
+
+    found = await repository.find_recent(
+        1, "acme/widgets", "abc123", "ci/build", EventType.BUILD_FAILURE,
+        datetime.now(timezone.utc) - timedelta(hours=24),
+    )
+
+    assert found == []
+
+
+async def test_retype_changes_the_event_type_in_place(db_engine):
+    repository = SqlAlchemyEventRepository(db_engine)
+    now = datetime.now(timezone.utc)
+    original = Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=now, check_name="ci/build",
+    )
+    await repository.save_if_new(original)
+
+    retyped = await repository.retype(original, EventType.FLAKY_TEST)
+
+    assert retyped is True
+    assert await repository.get(1, "acme/widgets", "abc123", EventType.BUILD_FAILURE, "@org/team-a") is None
+    stored = await repository.get(1, "acme/widgets", "abc123", EventType.FLAKY_TEST, "@org/team-a")
+    assert stored is not None
+    assert stored.check_name == "ci/build"
+
+
+async def test_retype_is_a_noop_when_the_target_already_exists(db_engine):
+    repository = SqlAlchemyEventRepository(db_engine)
+    now = datetime.now(timezone.utc)
+    original = Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=now, check_name="ci/build",
+    )
+    already_flaky = Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.FLAKY_TEST, owner="@org/team-a", ts=now, check_name="ci/build",
+    )
+    await repository.save_if_new(original)
+    await repository.save_if_new(already_flaky)
+
+    assert await repository.retype(original, EventType.FLAKY_TEST) is False

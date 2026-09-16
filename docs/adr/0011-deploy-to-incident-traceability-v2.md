@@ -4,7 +4,7 @@ README lists deploy-to-incident traceability as a v2 signal. v1's error definiti
 
 ## Status
 
-📋 proposed (v2 — direction only, not scheduled against v1 work)
+✅ accepted (generic incident-reporting endpoint only — see `docs/plan/0016-deploy-to-incident-traceability.md`; the GitHub `deployment_status` webhook path this ADR also sketches remains unimplemented)
 
 ## Considered Options
 
@@ -20,3 +20,5 @@ README lists deploy-to-incident traceability as a v2 signal. v1's error definiti
 
 - No code changes from this ADR. It reserves the name `EventType.INCIDENT` and records that it is budget-counted by default (contrast with ADR 0010's `FLAKY_TEST`, which is explicitly excluded).
 - Actual implementation is deferred until after v1 (ADR 0005-0009) ships and there's a concrete need driving the design of the generic incident-reporting endpoint.
+
+**Update:** `docs/plan/0016-deploy-to-incident-traceability.md` implements the generic `POST /api/v1/installations/{id}/incidents` endpoint, resolving the "left open, deliberately" points above as: attribution covers every commit in the reported range (not just the head), incidents count against budget with no severity weighting (severity is accepted and stored on the request but not yet used in any calculation), and auth reuses ADR 0009's installation-scoped bearer token. The GitHub-native `deployment_status` webhook path is still not implemented.

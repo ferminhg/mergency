@@ -12,7 +12,7 @@
 
 ## Status
 
-proposed
+implemented
 
 ## Context
 
@@ -495,7 +495,14 @@ async def test_falls_back_to_default_team_when_no_codeowners_match(monkeypatch):
     assert stored is not None
 
 
+<<<<<<< HEAD
 async def test_report_incident_task_delegates_to_the_async_pipeline(monkeypatch):
+=======
+def test_report_incident_task_delegates_to_the_async_pipeline(monkeypatch):
+    # not `async def`: `report_incident` itself calls `asyncio.run(...)`, which raises
+    # if invoked from inside a loop pytest-asyncio is already running for an async test —
+    # same reasoning `tests/worker/test_classify_activity_event.py` follows.
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
     captured = {}
 
     async def _fake(**kwargs):
@@ -692,7 +699,11 @@ celery_app = Celery(
 
 - [ ] **Step 6: Verify the app still boots with the new task registered**
 
+<<<<<<< HEAD
 Run: `docker compose run --rm app python -c "from mergency.worker.celery_app import celery_app; assert 'report_incident' in celery_app.tasks"`
+=======
+Run: `docker compose run --rm app python -c "from mergency.worker.celery_app import celery_app; celery_app.loader.import_default_modules(); assert 'report_incident' in celery_app.tasks"` (`include=` alone doesn't eagerly import task modules — `import_default_modules()` is what a real worker calls at startup, and is needed here too to populate `celery_app.tasks` for this check; this is pre-existing behavior, not something this task changes)
+>>>>>>> 5fb07bf2275ad3cef5bfe84422e84353c38a246a
 Expected: no output, exit code 0
 
 - [ ] **Step 7: Commit**

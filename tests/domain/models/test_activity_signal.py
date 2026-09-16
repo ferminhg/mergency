@@ -13,6 +13,7 @@ def test_check_run_signal_is_immutable():
         installation_id=1,
         repo="acme/widgets",
         sha="abc123",
+        check_name="ci/build",
         action="completed",
         conclusion="failure",
         head_branch="main",
