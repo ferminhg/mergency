@@ -10,6 +10,7 @@ from mergency.domain.models.event_type import EventType
 def test_event_type_values_match_adr():
     assert EventType.BUILD_FAILURE == "build_failure"
     assert EventType.REVERT == "revert"
+    assert EventType.INCIDENT == "incident"
 
 
 def test_event_is_immutable():
