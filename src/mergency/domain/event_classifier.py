@@ -20,6 +20,17 @@ class EventClassifier:
             case _:
                 raise TypeError(f"unsupported signal type: {type(signal)!r}")
 
+    def is_flaky_candidate(self, signal: CheckRunSignal) -> bool:
+        if signal.action != "completed":
+            return False
+        if signal.conclusion != "success":
+            return False
+        if signal.head_branch != signal.default_branch:
+            return False
+        if signal.completed_at is None:
+            return False
+        return True
+
     def _classify_check_run(self, signal: CheckRunSignal) -> Event | None:
         if signal.action != "completed":
             return None

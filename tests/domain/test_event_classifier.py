@@ -72,6 +72,30 @@ async def test_revert_event_has_no_check_name(classifier):
     assert event.check_name is None
 
 
+async def test_is_flaky_candidate_for_a_successful_completion_on_default_branch(classifier):
+    signal = _check_run_signal(conclusion="success")
+
+    assert classifier.is_flaky_candidate(signal) is True
+
+
+async def test_is_not_a_flaky_candidate_when_not_completed(classifier):
+    signal = _check_run_signal(conclusion="success", action="in_progress")
+
+    assert classifier.is_flaky_candidate(signal) is False
+
+
+async def test_is_not_a_flaky_candidate_for_a_failure_conclusion(classifier):
+    signal = _check_run_signal(conclusion="failure")
+
+    assert classifier.is_flaky_candidate(signal) is False
+
+
+async def test_is_not_a_flaky_candidate_off_the_default_branch(classifier):
+    signal = _check_run_signal(conclusion="success", head_branch="feature-x")
+
+    assert classifier.is_flaky_candidate(signal) is False
+
+
 async def test_classifies_revert_push_on_default_branch(classifier):
     event = await classifier.classify(_push_signal())
 
