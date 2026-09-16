@@ -12,6 +12,7 @@ def parse_check_run_signal(payload: dict) -> CheckRunSignal:
         installation_id=payload["installation"]["id"],
         repo=repository["full_name"],
         sha=check_run["head_sha"],
+        check_name=check_run["name"],
         action=payload["action"],
         conclusion=check_run["conclusion"],
         head_branch=check_run["check_suite"]["head_branch"],

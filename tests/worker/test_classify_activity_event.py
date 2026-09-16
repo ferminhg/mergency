@@ -59,6 +59,7 @@ def _check_run_payload():
     return {
         "action": "completed",
         "check_run": {
+            "name": "ci/build",
             "head_sha": "abc123",
             "conclusion": "failure",
             "completed_at": "2026-09-14T10:00:00Z",
