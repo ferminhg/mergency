@@ -96,6 +96,30 @@ class SqlAlchemyEventRepository:
             rows = result.all()
         return [DailyEventCount(day=row.day, count=row.count) for row in rows]
 
+    async def find_recent(
+        self,
+        installation_id: int,
+        repo: str,
+        sha: str,
+        check_name: str,
+        event_type: EventType,
+        since: datetime,
+    ) -> list[Event]:
+        async with self._engine.connect() as conn:
+            rows = (
+                await conn.execute(
+                    select(events_table).where(
+                        events_table.c.installation_id == installation_id,
+                        events_table.c.repo == repo,
+                        events_table.c.sha == sha,
+                        events_table.c.check_name == check_name,
+                        events_table.c.event_type == event_type.value,
+                        events_table.c.ts >= since,
+                    )
+                )
+            ).all()
+        return [_row_to_event(row) for row in rows]
+
 
 def _row_to_event(row) -> Event:
     return Event(

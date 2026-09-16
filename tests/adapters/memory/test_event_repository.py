@@ -151,6 +151,53 @@ async def test_daily_counts_since_buckets_by_day_for_matching_owner_and_type():
     ]
 
 
+async def test_find_recent_returns_matching_events_within_window():
+    repository = InMemoryEventRepository()
+    now = datetime.now(timezone.utc)
+    matching = Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=now, check_name="ci/build",
+    )
+    await repository.save_if_new(matching)
+
+    found = await repository.find_recent(
+        1, "acme/widgets", "abc123", "ci/build", EventType.BUILD_FAILURE, now - timedelta(hours=1)
+    )
+
+    assert found == [matching]
+
+
+async def test_find_recent_excludes_events_outside_the_window():
+    repository = InMemoryEventRepository()
+    stale_ts = datetime.now(timezone.utc) - timedelta(hours=48)
+    await repository.save_if_new(Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=stale_ts, check_name="ci/build",
+    ))
+
+    found = await repository.find_recent(
+        1, "acme/widgets", "abc123", "ci/build", EventType.BUILD_FAILURE,
+        datetime.now(timezone.utc) - timedelta(hours=24),
+    )
+
+    assert found == []
+
+
+async def test_find_recent_excludes_a_different_check_name():
+    repository = InMemoryEventRepository()
+    now = datetime.now(timezone.utc)
+    await repository.save_if_new(Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=now, check_name="ci/lint",
+    ))
+
+    found = await repository.find_recent(
+        1, "acme/widgets", "abc123", "ci/build", EventType.BUILD_FAILURE, now - timedelta(hours=1)
+    )
+
+    assert found == []
+
+
 async def test_daily_counts_since_excludes_other_owners_types_installations_and_stale_events():
     repository = InMemoryEventRepository()
     now = datetime.now(timezone.utc)

@@ -154,3 +154,36 @@ async def test_daily_counts_since_excludes_events_outside_the_window(db_engine):
     )
 
     assert buckets == []
+
+
+async def test_find_recent_returns_matching_events_within_window(db_engine):
+    repository = SqlAlchemyEventRepository(db_engine)
+    now = datetime.now(timezone.utc)
+    await repository.save_if_new(Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=now, check_name="ci/build",
+    ))
+
+    found = await repository.find_recent(
+        1, "acme/widgets", "abc123", "ci/build", EventType.BUILD_FAILURE,
+        now - timedelta(hours=1),
+    )
+
+    assert len(found) == 1
+    assert found[0].check_name == "ci/build"
+
+
+async def test_find_recent_excludes_events_outside_the_window(db_engine):
+    repository = SqlAlchemyEventRepository(db_engine)
+    stale_ts = datetime.now(timezone.utc) - timedelta(hours=48)
+    await repository.save_if_new(Event(
+        installation_id=1, repo="acme/widgets", sha="abc123",
+        event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=stale_ts, check_name="ci/build",
+    ))
+
+    found = await repository.find_recent(
+        1, "acme/widgets", "abc123", "ci/build", EventType.BUILD_FAILURE,
+        datetime.now(timezone.utc) - timedelta(hours=24),
+    )
+
+    assert found == []

@@ -64,3 +64,24 @@ class InMemoryEventRepository:
                 day = event.ts.astimezone(timezone.utc).date()
                 counts[day] = counts.get(day, 0) + 1
         return [DailyEventCount(day=day, count=count) for day, count in sorted(counts.items())]
+
+    async def find_recent(
+        self,
+        installation_id: int,
+        repo: str,
+        sha: str,
+        check_name: str,
+        event_type: EventType,
+        since: datetime,
+    ) -> list[Event]:
+        async with self._lock:
+            return [
+                event
+                for event in self._events.values()
+                if event.installation_id == installation_id
+                and event.repo == repo
+                and event.sha == sha
+                and event.check_name == check_name
+                and event.event_type == event_type
+                and event.ts >= since
+            ]
