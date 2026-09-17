@@ -1,28 +1,28 @@
 from datetime import datetime, timedelta, timezone
 
-from mergency.adapters.memory.event_repository import InMemoryEventRepository
+from mergency.adapters.memory.activity_event_repository import InMemoryActivityEventRepository
 from mergency.adapters.memory.tenant_config_repository import InMemoryTenantConfigRepository
 from mergency.domain.budget_calculator import BudgetCalculator
-from mergency.domain.models.event import Event
-from mergency.domain.models.event_type import EventType
+from mergency.domain.models.activity_event import ActivityEvent
+from mergency.domain.models.activity_event_type import ActivityEventType
 from mergency.domain.models.tenant_config import TenantConfig
 
 
-def _event(event_type: EventType, sha: str, owner: str, ts: datetime) -> Event:
-    return Event(
+def _event(event_type: ActivityEventType, sha: str, owner: str, ts: datetime) -> ActivityEvent:
+    return ActivityEvent(
         installation_id=1, repo="acme/widgets", sha=sha, event_type=event_type, owner=owner, ts=ts
     )
 
 
 async def test_status_for_counts_allow_listed_events_within_the_window():
-    event_repository = InMemoryEventRepository()
+    event_repository = InMemoryActivityEventRepository()
     config_repository = InMemoryTenantConfigRepository()
     await config_repository.upsert(
         TenantConfig(1, rolling_window_days=28, default_team="unassigned", max_events_per_window=5, warn_threshold_pct=50)
     )
     now = datetime.now(timezone.utc)
-    await event_repository.save_if_new(_event(EventType.BUILD_FAILURE, "sha1", "@org/backend-team", now))
-    await event_repository.save_if_new(_event(EventType.REVERT, "sha2", "@org/backend-team", now))
+    await event_repository.save_if_new(_event(ActivityEventType.BUILD_FAILURE, "sha1", "@org/backend-team", now))
+    await event_repository.save_if_new(_event(ActivityEventType.REVERT, "sha2", "@org/backend-team", now))
     calculator = BudgetCalculator(event_repository, config_repository)
 
     status = await calculator.status_for(1, "@org/backend-team")
@@ -35,13 +35,13 @@ async def test_status_for_counts_allow_listed_events_within_the_window():
 
 
 async def test_status_for_excludes_events_outside_the_rolling_window():
-    event_repository = InMemoryEventRepository()
+    event_repository = InMemoryActivityEventRepository()
     config_repository = InMemoryTenantConfigRepository()
     await config_repository.upsert(
         TenantConfig(1, rolling_window_days=28, default_team="unassigned", max_events_per_window=5, warn_threshold_pct=50)
     )
     stale_ts = datetime.now(timezone.utc) - timedelta(days=40)
-    await event_repository.save_if_new(_event(EventType.BUILD_FAILURE, "sha1", "@org/backend-team", stale_ts))
+    await event_repository.save_if_new(_event(ActivityEventType.BUILD_FAILURE, "sha1", "@org/backend-team", stale_ts))
     calculator = BudgetCalculator(event_repository, config_repository)
 
     status = await calculator.status_for(1, "@org/backend-team")
@@ -51,14 +51,14 @@ async def test_status_for_excludes_events_outside_the_rolling_window():
 
 
 async def test_status_for_never_goes_below_zero_percent_when_over_budget():
-    event_repository = InMemoryEventRepository()
+    event_repository = InMemoryActivityEventRepository()
     config_repository = InMemoryTenantConfigRepository()
     await config_repository.upsert(
         TenantConfig(1, rolling_window_days=28, default_team="unassigned", max_events_per_window=1, warn_threshold_pct=50)
     )
     now = datetime.now(timezone.utc)
-    await event_repository.save_if_new(_event(EventType.BUILD_FAILURE, "sha1", "@org/backend-team", now))
-    await event_repository.save_if_new(_event(EventType.REVERT, "sha2", "@org/backend-team", now))
+    await event_repository.save_if_new(_event(ActivityEventType.BUILD_FAILURE, "sha1", "@org/backend-team", now))
+    await event_repository.save_if_new(_event(ActivityEventType.REVERT, "sha2", "@org/backend-team", now))
     calculator = BudgetCalculator(event_repository, config_repository)
 
     status = await calculator.status_for(1, "@org/backend-team")
@@ -68,7 +68,7 @@ async def test_status_for_never_goes_below_zero_percent_when_over_budget():
 
 
 async def test_status_for_uses_hardcoded_defaults_when_no_config_exists():
-    event_repository = InMemoryEventRepository()
+    event_repository = InMemoryActivityEventRepository()
     config_repository = InMemoryTenantConfigRepository()
     calculator = BudgetCalculator(event_repository, config_repository)
 
@@ -81,13 +81,13 @@ async def test_status_for_uses_hardcoded_defaults_when_no_config_exists():
 
 
 async def test_status_for_excludes_flaky_test_events_from_consumption():
-    event_repository = InMemoryEventRepository()
+    event_repository = InMemoryActivityEventRepository()
     config_repository = InMemoryTenantConfigRepository()
     await config_repository.upsert(
         TenantConfig(1, rolling_window_days=28, default_team="unassigned", max_events_per_window=5, warn_threshold_pct=50)
     )
     now = datetime.now(timezone.utc)
-    await event_repository.save_if_new(_event(EventType.FLAKY_TEST, "sha1", "@org/backend-team", now))
+    await event_repository.save_if_new(_event(ActivityEventType.FLAKY_TEST, "sha1", "@org/backend-team", now))
     calculator = BudgetCalculator(event_repository, config_repository)
 
     status = await calculator.status_for(1, "@org/backend-team")
@@ -97,13 +97,13 @@ async def test_status_for_excludes_flaky_test_events_from_consumption():
 
 
 async def test_status_for_counts_incident_events_alongside_build_failure_and_revert():
-    event_repository = InMemoryEventRepository()
+    event_repository = InMemoryActivityEventRepository()
     config_repository = InMemoryTenantConfigRepository()
     await config_repository.upsert(
         TenantConfig(1, rolling_window_days=28, default_team="unassigned", max_events_per_window=5, warn_threshold_pct=50)
     )
     now = datetime.now(timezone.utc)
-    await event_repository.save_if_new(_event(EventType.INCIDENT, "sha1", "@org/backend-team", now))
+    await event_repository.save_if_new(_event(ActivityEventType.INCIDENT, "sha1", "@org/backend-team", now))
     calculator = BudgetCalculator(event_repository, config_repository)
 
     status = await calculator.status_for(1, "@org/backend-team")
@@ -112,13 +112,13 @@ async def test_status_for_counts_incident_events_alongside_build_failure_and_rev
 
 
 async def test_status_for_returns_zero_percent_when_limit_is_non_positive():
-    event_repository = InMemoryEventRepository()
+    event_repository = InMemoryActivityEventRepository()
     config_repository = InMemoryTenantConfigRepository()
     await config_repository.upsert(
         TenantConfig(1, rolling_window_days=28, default_team="unassigned", max_events_per_window=0, warn_threshold_pct=50)
     )
     now = datetime.now(timezone.utc)
-    await event_repository.save_if_new(_event(EventType.BUILD_FAILURE, "sha1", "@org/backend-team", now))
+    await event_repository.save_if_new(_event(ActivityEventType.BUILD_FAILURE, "sha1", "@org/backend-team", now))
     calculator = BudgetCalculator(event_repository, config_repository)
 
     status = await calculator.status_for(1, "@org/backend-team")

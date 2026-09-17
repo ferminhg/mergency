@@ -1,5 +1,9 @@
 # Rename `Event`/`EventType` to `ActivityEvent`/`ActivityEventType` Implementation Plan
 
+## Status
+
+✅ implemented
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Execute the rename decided in [ADR 0013](../adr/0013-activity-event-model-naming.md) (tracked by [issue #25](https://github.com/ferminhg/mergency/issues/25)): `Event` → `ActivityEvent`, `EventType` → `ActivityEventType`, and every dependent port/adapter/factory, without changing behavior or the Postgres `events` table.

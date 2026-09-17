@@ -1,16 +1,16 @@
 from datetime import datetime, timedelta, timezone
 
 from mergency.domain.budget_calculator import BudgetCalculator
+from mergency.domain.models.activity_event_type import ActivityEventType
 from mergency.domain.models.budget_history import BudgetHistory
-from mergency.domain.models.event_type import EventType
-from mergency.domain.ports.event_repository import EventRepository
+from mergency.domain.ports.activity_event_repository import ActivityEventRepository
 
-_COUNTED_EVENT_TYPES = (EventType.BUILD_FAILURE, EventType.REVERT)
+_COUNTED_EVENT_TYPES = (ActivityEventType.BUILD_FAILURE, ActivityEventType.REVERT)
 
 
 class BudgetHistoryQuery:
     def __init__(
-        self, budget_calculator: BudgetCalculator, event_repository: EventRepository
+        self, budget_calculator: BudgetCalculator, event_repository: ActivityEventRepository
     ) -> None:
         self._budget_calculator = budget_calculator
         self._event_repository = event_repository

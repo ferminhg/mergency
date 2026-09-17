@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
 
-from mergency.adapters.memory.event_repository import InMemoryEventRepository
+from mergency.adapters.memory.activity_event_repository import InMemoryActivityEventRepository
 from mergency.adapters.memory.tenant_config_repository import InMemoryTenantConfigRepository
 from mergency.domain.config_resolver import ConfigResolver
-from mergency.domain.models.event_type import EventType
+from mergency.domain.models.activity_event_type import ActivityEventType
 from mergency.domain.ownership_resolver import OwnershipResolver
 from mergency.worker import report_incident as task_module
 
@@ -38,11 +38,11 @@ class _StubCommitRangeProvider:
 
 
 def _wire(monkeypatch, *, shas, files_by_sha, codeowners_by_path):
-    event_repository = InMemoryEventRepository()
+    event_repository = InMemoryActivityEventRepository()
     monkeypatch.setattr(
         task_module, "get_commit_range_provider", lambda: _StubCommitRangeProvider(shas)
     )
-    monkeypatch.setattr(task_module, "get_event_repository", lambda: event_repository)
+    monkeypatch.setattr(task_module, "get_activity_event_repository", lambda: event_repository)
     monkeypatch.setattr(
         task_module,
         "get_config_resolver",
@@ -82,8 +82,8 @@ async def test_persists_one_incident_event_per_commit_and_owner_in_the_range(mon
         occurred_at_iso=occurred_at.isoformat(),
     )
 
-    stored_a = await event_repository.get(1, "acme/widgets", "sha-a", EventType.INCIDENT, "@org/team-a")
-    stored_b = await event_repository.get(1, "acme/widgets", "sha-b", EventType.INCIDENT, "@org/team-b")
+    stored_a = await event_repository.get(1, "acme/widgets", "sha-a", ActivityEventType.INCIDENT, "@org/team-a")
+    stored_b = await event_repository.get(1, "acme/widgets", "sha-b", ActivityEventType.INCIDENT, "@org/team-b")
     assert stored_a is not None
     assert stored_a.ts == occurred_at
     assert stored_b is not None
@@ -106,7 +106,7 @@ async def test_falls_back_to_default_team_when_no_codeowners_match(monkeypatch):
         occurred_at_iso=datetime.now(timezone.utc).isoformat(),
     )
 
-    stored = await event_repository.get(1, "acme/widgets", "sha-a", EventType.INCIDENT, "unassigned")
+    stored = await event_repository.get(1, "acme/widgets", "sha-a", ActivityEventType.INCIDENT, "unassigned")
     assert stored is not None
 
 

@@ -5,15 +5,15 @@ import logging
 from mergency.adapters.github.check_run_signal_parser import parse_check_run_signal
 from mergency.adapters.github.push_signal_parser import parse_push_signal
 from mergency.api.deps import (
+    get_activity_event_repository,
     get_changed_files_provider,
     get_config_resolver,
     get_event_classifier,
-    get_event_repository,
     get_flaky_test_detector,
     get_ownership_resolver,
 )
+from mergency.domain.models.activity_event import ActivityEvent
 from mergency.domain.models.check_run_signal import CheckRunSignal
-from mergency.domain.models.event import Event
 from mergency.domain.models.push_signal import PushSignal
 from mergency.worker.celery_app import celery_app
 
@@ -54,7 +54,7 @@ async def _classify_resolve_and_persist(signal: CheckRunSignal | PushSignal) -> 
             event.installation_id, event.repo, changed_files, config.default_team
         )
 
-        event_repository = get_event_repository()
+        event_repository = get_activity_event_repository()
         for owner in owners:
             await event_repository.save_if_new(dataclasses.replace(event, owner=owner))
         return
@@ -65,7 +65,7 @@ async def _classify_resolve_and_persist(signal: CheckRunSignal | PushSignal) -> 
         )
 
 
-async def _changed_files_for(signal: CheckRunSignal | PushSignal, event: Event) -> list[str]:
+async def _changed_files_for(signal: CheckRunSignal | PushSignal, event: ActivityEvent) -> list[str]:
     if isinstance(signal, PushSignal):
         commit = next(commit for commit in signal.commits if commit.sha == event.sha)
         return commit.files

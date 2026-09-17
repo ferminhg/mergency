@@ -3,15 +3,15 @@ from datetime import datetime, timezone
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from mergency.adapters.memory.event_repository import InMemoryEventRepository
+from mergency.adapters.memory.activity_event_repository import InMemoryActivityEventRepository
 from mergency.adapters.memory.tenant_config_repository import InMemoryTenantConfigRepository
 from mergency.adapters.memory.tenant_repository import InMemoryTenantRepository
 from mergency.api.app import app
 from mergency.api.deps import get_budget_history_query, get_tenant_repository
 from mergency.domain.budget_calculator import BudgetCalculator
 from mergency.domain.budget_history_query import BudgetHistoryQuery
-from mergency.domain.models.event import Event
-from mergency.domain.models.event_type import EventType
+from mergency.domain.models.activity_event import ActivityEvent
+from mergency.domain.models.activity_event_type import ActivityEventType
 from mergency.domain.models.installation import Installation
 from mergency.domain.models.tenant_config import TenantConfig
 from mergency.domain.models.tenant_status import TenantStatus
@@ -31,7 +31,7 @@ def _installation(api_token: str | None = "the-real-token") -> Installation:
 @pytest.fixture(autouse=True)
 def override_dependencies():
     tenant_repository = InMemoryTenantRepository()
-    event_repository = InMemoryEventRepository()
+    event_repository = InMemoryActivityEventRepository()
     config_repository = InMemoryTenantConfigRepository()
     budget_history_query = BudgetHistoryQuery(
         BudgetCalculator(event_repository, config_repository), event_repository
@@ -57,7 +57,7 @@ async def test_returns_status_and_daily_history_for_a_valid_token(override_depen
     )
     now = datetime.now(timezone.utc)
     await event_repository.save_if_new(
-        Event(installation_id=42, repo="acme/widgets", sha="sha1", event_type=EventType.BUILD_FAILURE, owner="@org/team-a", ts=now)
+        ActivityEvent(installation_id=42, repo="acme/widgets", sha="sha1", event_type=ActivityEventType.BUILD_FAILURE, owner="@org/team-a", ts=now)
     )
 
     async with await _client() as client:

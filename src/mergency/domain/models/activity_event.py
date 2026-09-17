@@ -1,15 +1,15 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from mergency.domain.models.event_type import EventType
+from mergency.domain.models.activity_event_type import ActivityEventType
 
 
 @dataclass(frozen=True)
-class Event:
+class ActivityEvent:
     installation_id: int
     repo: str
     sha: str
-    event_type: EventType
+    event_type: ActivityEventType
     owner: str | None
     ts: datetime
     check_name: str | None = None
