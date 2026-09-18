@@ -29,8 +29,6 @@ def _build_manifest(hook_url: str, app_name: str) -> dict:
             "pull_requests": "write",
         },
         "default_events": [
-            "installation",
-            "installation_repositories",
             "push",
             "pull_request",
             "check_run",
