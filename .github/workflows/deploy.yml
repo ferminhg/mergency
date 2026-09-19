@@ -23,6 +23,7 @@ jobs:
           username: ec2-user
           key: ${{ secrets.MERGENCY_AWS_SSH_KEY }}
           script: |
+            set -e
             cd /opt/mergency
             git pull
             docker compose up -d --build
