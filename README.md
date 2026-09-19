@@ -158,7 +158,7 @@ GitHub App settings → **Advanced** → **Recent Deliveries**. The very first `
 
 ### 7. Continuous deployment (push to `main`) 🔁
 
-Once the instance is up (Steps 1-6 above), every push to `main` redeploys it automatically via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). The workflow SSHes into the instance using the same `~/.ssh/mergency-aws` key from Step 1 and runs `git pull && docker compose up -d --build` — the exact commands from Step 3, just no longer typed by hand.
+Once the instance is up (Steps 1-6 above), every push to `main` redeploys it automatically via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) — but only if [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (lint + test) finishes successfully first. `deploy.yml` triggers on that `ci` workflow's completion (`workflow_run`), not on the push itself, so a broken build never reaches the instance. Once triggered, it SSHes into the instance using the same `~/.ssh/mergency-aws` key from Step 1 and runs `git pull && docker compose up -d --build` — the exact commands from Step 3, just no longer typed by hand.
 
 **One-time setup, part 1 — GitHub Actions secrets**, as the repo owner, in `https://github.com/ferminhg/mergency/settings/secrets/actions`:
 
