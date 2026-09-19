@@ -4,7 +4,9 @@
 
 ## Status
 
-📋 proposed
+✅ accepted
+
+**Update (2026-09-19):** root-caused via [docs/plan/0019-pr-comment-bot-live-verification.md](../plan/0019-pr-comment-bot-live-verification.md). The leading hypothesis here (no budget event yet) was checked and ruled out first — but even after ADR 0016's exercise produced a real shrinking-budget signal, the comment still didn't appear. Root cause was **not** in the PR comment bot code path or webhook dispatch (both ADR 0008 and ADR 0014's implementations were read and behave correctly) — it was that the GitHub App's manifest never requested `issues: write`. `GithubPrCommentClient` posts via the Issue Comments API (`get_issue(pr_number)`), which GitHub gates behind the **Issues** permission, not **Pull requests**. Every `evaluate_pr_budget` run was crashing with `403 Resource not accessible by integration` in the worker, invisible from the webhook's `200` delivery response. Fixed in [PR #49](https://github.com/ferminhg/mergency/pull/49) (manifest + regression test); the already-created live App's permissions were updated by hand, since a manifest change doesn't retroactively apply to an existing App. Two unrelated infra gaps were also found and fixed along the way (dead containers with no restart policy, missing `redis`/`worker` services and the missing `redis` client dependency) — see [PR #46](https://github.com/ferminhg/mergency/pull/46).
 
 ## Considered Options
 
