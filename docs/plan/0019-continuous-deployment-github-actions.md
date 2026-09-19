@@ -12,7 +12,13 @@
 
 ## Status
 
-proposed
+implemented (2026-09-19)
+
+**Notes on how execution deviated from the plan as written:**
+
+- **Task 1 hardening added during code review.** The workflow committed in Task 1 differs from the literal YAML block in that step: a code-quality review flagged missing `timeout-minutes` (a hung SSH session could otherwise block for the default 6-hour job timeout), no `concurrency` group (two rapid pushes could race two deploys against the same checkout), and no explicit least-privilege `permissions:` block. All three were added in a follow-up commit before merge. See the workflow file itself for the final content.
+- **Task 2 (storing `MERGENCY_AWS_SSH_KEY` and `MERGENCY_AWS_HOST` as GitHub Actions secrets) is a manual step for the repo owner** — it was intentionally not automated (entering a private key into a form is not something to script or hand to an agent) and has not been executed as part of this implementation pass. The workflow will not succeed on a real push until this is done.
+- **End-to-end verification (`## Verification` points 3-5) was not exercised** in this pass, since it depends on Task 2 being done first and on a real push to `main` against the live dogfood instance. Points 1-2 (workflow lints clean, secrets documented) were confirmed.
 
 ## Context
 

@@ -1,0 +1,28 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-dogfood
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Deploy to dogfood instance
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.MERGENCY_AWS_HOST }}
+          username: ec2-user
+          key: ${{ secrets.MERGENCY_AWS_SSH_KEY }}
+          script: |
+            cd /opt/mergency
+            git pull
+            docker compose up -d --build
