@@ -27,6 +27,7 @@ def _build_manifest(hook_url: str, app_name: str) -> dict:
             "contents": "read",
             "checks": "read",
             "pull_requests": "write",
+            "issues": "write",
         },
         "default_events": [
             "push",
