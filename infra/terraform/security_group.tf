@@ -4,11 +4,11 @@ resource "aws_security_group" "mergency" {
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
-    description = "SSH from operator"
+    description = "SSH, protected by key auth only, not by CIDR - GitHub Actions runners use dynamic IPs, see ADR 0020"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.ssh_allowed_cidr]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
