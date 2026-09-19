@@ -198,3 +198,4 @@ This project is just getting started, issues and design discussions are very wel
 ## License
 
 MIT (or TBD, confirm before first release).
+<!-- issue #41 verification -->
