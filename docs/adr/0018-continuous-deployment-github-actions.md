@@ -4,7 +4,7 @@ Since `docs/plan/0018-aws-terraform-dogfood-deployment.md` shipped, deploying a 
 
 ## Status
 
-📋 proposed
+✅ accepted (implemented — see `docs/plan/0019-continuous-deployment-github-actions.md`)
 
 ## Considered Options
 
