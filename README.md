@@ -156,6 +156,21 @@ curl -s -o /dev/null -w "%{http_code}\n" http://<instance_public_ip>:8000/webhoo
 
 GitHub App settings → **Advanced** → **Recent Deliveries**. The very first `ping` delivery often shows `failed to connect to host` — that is expected, it fires the moment you create the app, before the stack is up. Hit **Redeliver** once the stack is running, or just push a commit to trigger a fresh delivery. Either should show `200`.
 
+### 7. Continuous deployment (push to `main`) 🔁
+
+Once the instance is up (Steps 1-6 above), every push to `main` redeploys it automatically via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). The workflow SSHes into the instance using the same `~/.ssh/mergency-aws` key from Step 1 and runs `git pull && docker compose up -d --build` — the exact commands from Step 3, just no longer typed by hand.
+
+**One-time setup**, as the repo owner, in `https://github.com/ferminhg/mergency/settings/secrets/actions`:
+
+| Secret | Value |
+|---|---|
+| `MERGENCY_AWS_SSH_KEY` | contents of local `~/.ssh/mergency-aws` (the private key) |
+| `MERGENCY_AWS_HOST` | `terraform output -raw instance_public_ip` |
+
+**Verifying a deploy happened:** `ssh -A -i ~/.ssh/mergency-aws ec2-user@<instance_public_ip> "cd /opt/mergency && docker compose ps"` — the `CREATED`/`STATUS` column timestamps advance after a push, since `--build` recreates the container even when only the image layer changed.
+
+> ⚠️ **No rollback exists yet.** If a deploy ships a build that fails to start (`docker compose up --build` erroring, or the app crash-looping), there is no automatic revert — the previous container is already gone once `up -d --build` replaces it. The only recovery today is manual: SSH in, `git checkout <last-good-sha>`, and run `docker compose up -d --build` again by hand. This is a known gap, called out in `docs/adr/0018-continuous-deployment-github-actions.md`, not an oversight.
+
 ### Tearing it down 🧹
 
 ```bash
