@@ -160,12 +160,36 @@ GitHub App settings → **Advanced** → **Recent Deliveries**. The very first `
 
 Once the instance is up (Steps 1-6 above), every push to `main` redeploys it automatically via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). The workflow SSHes into the instance using the same `~/.ssh/mergency-aws` key from Step 1 and runs `git pull && docker compose up -d --build` — the exact commands from Step 3, just no longer typed by hand.
 
-**One-time setup**, as the repo owner, in `https://github.com/ferminhg/mergency/settings/secrets/actions`:
+**One-time setup, part 1 — GitHub Actions secrets**, as the repo owner, in `https://github.com/ferminhg/mergency/settings/secrets/actions`:
 
 | Secret | Value |
 |---|---|
 | `MERGENCY_AWS_SSH_KEY` | contents of local `~/.ssh/mergency-aws` (the private key) |
 | `MERGENCY_AWS_HOST` | `terraform output -raw instance_public_ip` |
+
+**One-time setup, part 2 — a deploy key so the instance can `git pull` on its own.** Step 3's `git clone` worked because your local SSH agent was forwarded (`-A`) into that one interactive session. The CD workflow has no such forwarding — it needs the *instance itself* to hold a credential for GitHub, or `git pull` fails with `Permission denied (publickey)`:
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/mergency-deploy-key -C "mergency-ci-deploy" -N ""
+cat ~/.ssh/mergency-deploy-key.pub
+```
+
+Add that public key at `https://github.com/ferminhg/mergency/settings/keys` → **Add deploy key**, read-only (don't check "Allow write access"). Then, on the instance, install the private half and point `git`/`ssh` at it:
+
+```bash
+# paste the contents of your local ~/.ssh/mergency-deploy-key into this file on the instance
+nano ~/.ssh/mergency-deploy-key
+chmod 600 ~/.ssh/mergency-deploy-key
+
+cat >> ~/.ssh/config << 'EOF'
+Host github.com
+  IdentityFile ~/.ssh/mergency-deploy-key
+  IdentitiesOnly yes
+EOF
+chmod 600 ~/.ssh/config
+```
+
+Verify with `cd /opt/mergency && git pull` on the instance — it should succeed with no prompt.
 
 **Verifying a deploy happened:** `ssh -A -i ~/.ssh/mergency-aws ec2-user@<instance_public_ip> "cd /opt/mergency && docker compose ps"` — the `CREATED`/`STATUS` column timestamps advance after a push, since `--build` recreates the container even when only the image layer changed.
 
