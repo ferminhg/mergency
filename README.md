@@ -200,3 +200,4 @@ This project is just getting started, issues and design discussions are very wel
 MIT (or TBD, confirm before first release).
 <!-- issue #41 verification -->
 <!-- retrigger after issues permission fix -->
+<!-- retrigger after issues permission approved -->
