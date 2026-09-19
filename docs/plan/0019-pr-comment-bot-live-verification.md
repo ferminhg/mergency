@@ -12,7 +12,9 @@
 
 ## Status
 
-proposed
+implemented
+
+**Note (2026-09-19):** all six tasks executed against the live dogfood instance and `ferminhg/mergency`. Real bugs found beyond this plan's original scope (Tasks 1 grew to cover a dead instance + missing `redis` dependency; Task 6's conditional path was entered and found the actual root cause: missing `issues:write` App permission). See [PR #46](https://github.com/ferminhg/mergency/pull/46), [PR #49](https://github.com/ferminhg/mergency/pull/49), and issue #41's closing comment for the full trail.
 
 ## Context
 

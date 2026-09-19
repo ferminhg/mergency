@@ -4,7 +4,9 @@
 
 ## Status
 
-📋 proposed
+✅ accepted
+
+**Update (2026-09-19):** exercise completed as part of [docs/plan/0019-pr-comment-bot-live-verification.md](../plan/0019-pr-comment-bot-live-verification.md). A `mergency.yml` was added first (lowering `max_events_per_window` to 2) so a single build-failure + revert would actually cross the warn threshold — see that plan's Context for why the default config would have produced a false negative. The push+revert exercise itself surfaced no ownership/attribution bug: both events landed in Postgres against owner `unassigned` (the correct fallback, since this repo has no `CODEOWNERS`) with `remaining_pct=0%`. See ADR 0017's update for what the exercise's *comment-posting* verification actually found.
 
 ## Considered Options
 
