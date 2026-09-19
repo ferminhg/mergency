@@ -1,0 +1,5 @@
+default_team: unassigned
+rolling_window_days: 28
+budget:
+  max_events_per_window: 2
+  warn_threshold_pct: 50
