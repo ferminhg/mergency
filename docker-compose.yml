@@ -1,8 +1,11 @@
 services:
   app:
     build: .
+    restart: unless-stopped
     env_file:
       - .env
+    environment:
+      MERGENCY_REDIS_URL: redis://redis:6379/0
     ports:
       - "8000:8000"
     volumes:
@@ -14,9 +17,35 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_started
+
+  worker:
+    build: .
+    restart: unless-stopped
+    command: celery -A mergency.worker.celery_app worker --loglevel=info
+    env_file:
+      - .env
+    environment:
+      MERGENCY_REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
 
   postgres:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: mergency
       POSTGRES_PASSWORD: mergency
