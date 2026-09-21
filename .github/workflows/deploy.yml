@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Deploy to dogfood instance
-        uses: appleboy/ssh-action@v1.2.0
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.MERGENCY_AWS_HOST }}
           username: ec2-user
