@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ page.title | default: site.title }}</title>
+  <meta name="description" content="{{ page.description | default: site.description }}">
+  <link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}">
+</head>
+<body>
+  <nav class="site-nav">
+    <span class="site-name">Mergency</span>
+    <a href="https://github.com/ferminhg/mergency">GitHub</a>
+  </nav>
+
+  <main>
+    {{ content }}
+  </main>
+
+  <footer class="site-footer">
+    <a href="https://github.com/ferminhg/mergency">github.com/ferminhg/mergency</a>
+  </footer>
+</body>
+</html>
