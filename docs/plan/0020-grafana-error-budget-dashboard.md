@@ -12,7 +12,7 @@
 
 ## Status
 
-proposed
+implemented
 
 ## Context
 
@@ -72,7 +72,7 @@ The `mergency`/`mergency` credentials match the existing `postgres` service defi
 
 **Verification:** `python3 -c "import yaml; yaml.safe_load(open('infra/grafana/provisioning/datasources/postgres.yml'))"` exits with no error (valid YAML).
 
-- [ ] Step 1 done
+- [x] Step 1 done
 
 ### Step 2: Dashboard provisioning provider
 
@@ -94,7 +94,7 @@ providers:
 
 **Verification:** `python3 -c "import yaml; yaml.safe_load(open('infra/grafana/provisioning/dashboards/dashboards.yml'))"` exits with no error.
 
-- [ ] Step 2 done
+- [x] Step 2 done
 
 ### Step 3: The error-budget dashboard definition
 
@@ -160,7 +160,7 @@ providers:
 
 **Verification:** `python3 -c "import json; json.load(open('infra/grafana/dashboards/error-budget.json'))"` exits with no error (valid JSON).
 
-- [ ] Step 3 done
+- [x] Step 3 done
 
 ### Step 4: `grafana` service in `docker-compose.yml`
 
@@ -197,7 +197,7 @@ volumes:
 
 **Verification:** `docker compose config` exits with no error and prints the `grafana` service with the `127.0.0.1:3000:3000` port mapping.
 
-- [ ] Step 4 done
+- [x] Step 4 done
 
 ### Step 5: `.env.example` — Grafana admin credentials
 
@@ -212,7 +212,7 @@ GRAFANA_ADMIN_PASSWORD=
 
 **Verification:** `grep -c GRAFANA_ADMIN .env.example` prints `2`.
 
-- [ ] Step 5 done
+- [x] Step 5 done
 
 ### Step 6: Bring the stack up and confirm the dashboard loads
 
@@ -230,7 +230,7 @@ Then open `http://localhost:3000`, log in with `GRAFANA_ADMIN_USER`/`GRAFANA_ADM
 - The "Mergency Postgres" datasource exists and its connection test succeeds (Connections → Data sources → Mergency Postgres → Save & test).
 - The "Mergency Error Budget" dashboard is listed and opens without a query error (an empty result set is fine if no events have been seeded yet — a SQL error is not).
 
-- [ ] Step 6 done
+- [x] Step 6 done
 
 ### Step 7: README — document the dashboard and the AWS access path
 
@@ -250,7 +250,7 @@ then open `http://localhost:3000` locally.
 
 **Verification:** `grep -c "Dashboard 📊" README.md` prints `1`.
 
-- [ ] Step 7 done
+- [x] Step 7 done
 
 ### Step 8: Commit
 
@@ -259,7 +259,7 @@ git add infra/grafana docker-compose.yml .env.example README.md docs/plan/0020-g
 git commit -m "feat: add Grafana error budget dashboard, provisioned as code"
 ```
 
-- [ ] Step 8 done
+- [x] Step 8 done
 
 ## Verification
 

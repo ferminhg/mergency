@@ -1,0 +1,55 @@
+{
+  "title": "Mergency Error Budget",
+  "uid": "mergency-error-budget",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "timezone": "browser",
+  "time": { "from": "now-90d", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "installation_id",
+        "type": "query",
+        "datasource": { "type": "postgres", "uid": "mergency-postgres" },
+        "query": "SELECT DISTINCT installation_id::text FROM tenant_config ORDER BY 1",
+        "refresh": 1,
+        "sort": 1
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Events over time by owner",
+      "type": "timeseries",
+      "datasource": { "type": "postgres", "uid": "mergency-postgres" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT date_trunc('day', ts) AS \"time\", owner || ' · ' || event_type AS metric, count(*)::float AS value FROM events WHERE installation_id = $installation_id::int AND $__timeFilter(ts) GROUP BY 1, owner, event_type ORDER BY 1",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Remaining budget % by owner (current)",
+      "type": "table",
+      "datasource": { "type": "postgres", "uid": "mergency-postgres" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 10 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT e.owner, tc.rolling_window_days, tc.max_events_per_window, count(e.id) FILTER (WHERE e.ts >= now() - (tc.rolling_window_days || ' days')::interval) AS events_in_window, round(100.0 * (1 - LEAST(1.0, count(e.id) FILTER (WHERE e.ts >= now() - (tc.rolling_window_days || ' days')::interval)::numeric / NULLIF(tc.max_events_per_window, 0))), 1) AS remaining_pct FROM tenant_config tc JOIN events e ON e.installation_id = tc.installation_id WHERE tc.installation_id = $installation_id::int GROUP BY e.owner, tc.rolling_window_days, tc.max_events_per_window ORDER BY remaining_pct ASC",
+          "rawQuery": true
+        }
+      ]
+    }
+  ]
+}
