@@ -10,6 +10,7 @@ from mergency.adapters.github.pr_comment_client import GithubPrCommentClient
 from mergency.adapters.github.pull_request_files_provider import GithubPullRequestFilesProvider
 from mergency.adapters.github.repository_content_provider import GithubRepositoryContentProvider
 from mergency.adapters.github.token_manager import PyGithubInstallationTokenProvider
+from mergency.adapters.giphy.giphy_client import GiphyClient
 from mergency.adapters.memory.tenant_repository import InMemoryTenantRepository
 from mergency.api.settings import Settings
 from mergency.domain.budget_calculator import BudgetCalculator
@@ -23,6 +24,7 @@ from mergency.domain.ports.activity_event_repository import ActivityEventReposit
 from mergency.domain.ports.changed_files_provider import ChangedFilesProvider
 from mergency.domain.ports.codeowners_provider import CodeownersProvider
 from mergency.domain.ports.commit_range_provider import CommitRangeProvider
+from mergency.domain.ports.gif_provider import GifProvider
 from mergency.domain.ports.installation_token_provider import InstallationTokenProvider
 from mergency.domain.ports.pr_comment_client import PrCommentClient
 from mergency.domain.ports.pull_request_files_provider import PullRequestFilesProvider
@@ -136,6 +138,11 @@ def get_pr_budget_evaluator() -> PrBudgetEvaluator:
     return PrBudgetEvaluator(get_ownership_resolver(), get_budget_calculator())
 
 
+@lru_cache
+def get_gif_provider() -> GifProvider:
+    return GiphyClient(get_settings().giphy_api_key)
+
+
 def reset_dependency_caches() -> None:
     get_settings.cache_clear()
     get_tenant_repository.cache_clear()
@@ -157,3 +164,4 @@ def reset_dependency_caches() -> None:
     get_pull_request_files_provider.cache_clear()
     get_pr_comment_client.cache_clear()
     get_pr_budget_evaluator.cache_clear()
+    get_gif_provider.cache_clear()
