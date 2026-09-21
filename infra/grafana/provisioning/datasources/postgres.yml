@@ -1,0 +1,18 @@
+apiVersion: 1
+
+datasources:
+  - name: Mergency Postgres
+    uid: mergency-postgres
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    database: mergency
+    user: mergency
+    isDefault: true
+    editable: false
+    secureJsonData:
+      password: mergency
+    jsonData:
+      sslmode: disable
+      postgresVersion: 1600
+      timescaledb: false

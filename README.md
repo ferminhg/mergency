@@ -55,7 +55,15 @@ make lint    # run the linter (ruff) inside the container
 4. `docker compose up app`
 5. Install the GitHub App on a test org/repo from its GitHub settings page.
 
+## Dashboard 📊
 
+A Grafana instance (provisioned as code from `infra/grafana/`) shows event and remaining-budget trends. Local: `docker compose up grafana`, then open `http://localhost:3000`. On the AWS dogfood box it is **not** publicly exposed — reach it via an SSH tunnel:
+
+```bash
+ssh -L 3000:localhost:3000 <ec2-user>@<instance-ip>
+```
+
+then open `http://localhost:3000` locally.
 
 ## Deployment 🚀 (AWS dogfood)
 
