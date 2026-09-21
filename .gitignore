@@ -15,3 +15,5 @@ __pycache__/
 crash.log
 crash.*.log
 docs/devops/aws.md
+
+.superpowers/
