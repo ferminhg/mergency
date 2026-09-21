@@ -98,3 +98,12 @@ a:hover {
 .budget-bar-fill.budget-critical {
   background: var(--budget-critical);
 }
+
+.caption {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.text-center {
+  text-align: center;
+}

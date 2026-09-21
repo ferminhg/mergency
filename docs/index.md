@@ -29,7 +29,7 @@ description: Your team's error budget, applied to pull requests.
 <section class="section">
   <h2>Demo</h2>
   <img src="{{ '/assets/demo.gif' | relative_url }}" alt="Demo of Mergency: a build fails on main, the team's budget bar shrinks, and Mergency comments on a pull request with the current status.">
-  <p class="mono" style="color: var(--text-secondary); font-size: 0.9rem;">Build fails on main &rarr; budget shrinks &rarr; Mergency comments on the PR.</p>
+  <p class="mono caption">Build fails on main &rarr; budget shrinks &rarr; Mergency comments on the PR.</p>
 </section>
 
 <section class="section">
@@ -42,6 +42,6 @@ description: Your team's error budget, applied to pull requests.
   </ul>
 </section>
 
-<section class="section" style="text-align: center;">
+<section class="section text-center">
   <a href="https://github.com/ferminhg/mergency">View the project on GitHub</a>
 </section>
