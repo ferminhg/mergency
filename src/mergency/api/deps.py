@@ -3,6 +3,7 @@ from functools import lru_cache
 from mergency.adapters.db.activity_event_repository import SqlAlchemyActivityEventRepository
 from mergency.adapters.db.engine import build_engine
 from mergency.adapters.db.tenant_config_repository import SqlAlchemyTenantConfigRepository
+from mergency.adapters.giphy.giphy_client import GiphyClient
 from mergency.adapters.github.changed_files_provider import GithubChangedFilesProvider
 from mergency.adapters.github.codeowners_provider import GithubCodeownersProvider
 from mergency.adapters.github.commit_range_provider import GithubCommitRangeProvider
@@ -10,7 +11,6 @@ from mergency.adapters.github.pr_comment_client import GithubPrCommentClient
 from mergency.adapters.github.pull_request_files_provider import GithubPullRequestFilesProvider
 from mergency.adapters.github.repository_content_provider import GithubRepositoryContentProvider
 from mergency.adapters.github.token_manager import PyGithubInstallationTokenProvider
-from mergency.adapters.giphy.giphy_client import GiphyClient
 from mergency.adapters.memory.tenant_repository import InMemoryTenantRepository
 from mergency.api.settings import Settings
 from mergency.domain.budget_calculator import BudgetCalculator
