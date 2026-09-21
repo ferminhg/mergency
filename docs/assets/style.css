@@ -3,8 +3,6 @@
   --text: #c9d1d9;
   --text-secondary: #8b949e;
   --budget-healthy: #3fb950;
-  --budget-shrinking: #d29922;
-  --budget-critical: #f85149;
   --border: #30363d;
 }
 
@@ -74,29 +72,6 @@ a:hover {
 .hero p {
   color: var(--text-secondary);
   font-size: 1.15rem;
-}
-
-.budget-bar {
-  width: 100%;
-  height: 0.75rem;
-  border-radius: 999px;
-  background: var(--border);
-  overflow: hidden;
-}
-
-.budget-bar-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: var(--budget-healthy);
-  transition: width 0.3s ease, background-color 0.3s ease;
-}
-
-.budget-bar-fill.budget-shrinking {
-  background: var(--budget-shrinking);
-}
-
-.budget-bar-fill.budget-critical {
-  background: var(--budget-critical);
 }
 
 .caption {

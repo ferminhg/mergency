@@ -16,5 +16,6 @@ crash.log
 crash.*.log
 docs/devops/aws.md
 docs/_site/
+docs/.jekyll-cache/
 
 .superpowers/
