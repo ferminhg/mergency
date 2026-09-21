@@ -8,3 +8,4 @@ class Settings(BaseSettings):
     github_private_key: str
     github_webhook_secret: str
     database_url: str
+    giphy_api_key: str

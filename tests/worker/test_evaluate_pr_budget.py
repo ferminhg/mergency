@@ -1,3 +1,4 @@
+from mergency.domain.models.budget_severity import BudgetSeverity
 from mergency.domain.models.budget_status import BudgetStatus
 from mergency.domain.models.tenant_config import TenantConfig
 from mergency.domain.pr_comment_formatter import MARKER
@@ -47,21 +48,37 @@ class _RecordingCommentClient:
         self.updated.append((installation_id, repo, comment_id, body))
 
 
-def _shrinking_status() -> BudgetStatus:
-    return BudgetStatus(owner="@org/team-a", window_days=28, limit=5, consumed=4, remaining_pct=20.0)
+class _RecordingGifProvider:
+    def __init__(self, url: str = "https://giphy.example/gif.gif") -> None:
+        self.url = url
+        self.calls: list[BudgetSeverity] = []
+
+    async def gif_for_severity(self, severity):
+        self.calls.append(severity)
+        return self.url
+
+
+def _shrinking_status(remaining_pct: float = 20.0) -> BudgetStatus:
+    return BudgetStatus(
+        owner="@org/team-a", window_days=28, limit=5, consumed=4, remaining_pct=remaining_pct
+    )
 
 
 def _wire(monkeypatch, *, shrinking: list[BudgetStatus], existing_comment_id: int | None):
     comment_client = _RecordingCommentClient(existing_comment_id)
+    gif_provider = _RecordingGifProvider()
     monkeypatch.setattr(task_module, "get_pull_request_files_provider", lambda: _StubFilesProvider())
     monkeypatch.setattr(task_module, "get_config_resolver", lambda: _StubConfigResolver())
     monkeypatch.setattr(task_module, "get_pr_budget_evaluator", lambda: _StubEvaluator(shrinking))
     monkeypatch.setattr(task_module, "get_pr_comment_client", lambda: comment_client)
-    return comment_client
+    monkeypatch.setattr(task_module, "get_gif_provider", lambda: gif_provider)
+    return comment_client, gif_provider
 
 
-def test_creates_a_comment_when_an_owner_is_shrinking_and_none_exists_yet(monkeypatch):
-    comment_client = _wire(monkeypatch, shrinking=[_shrinking_status()], existing_comment_id=None)
+def test_creates_a_comment_with_a_gif_when_an_owner_is_shrinking_and_none_exists_yet(monkeypatch):
+    comment_client, gif_provider = _wire(
+        monkeypatch, shrinking=[_shrinking_status()], existing_comment_id=None
+    )
 
     task_module.evaluate_pr_budget(_payload())
 
@@ -71,10 +88,14 @@ def test_creates_a_comment_when_an_owner_is_shrinking_and_none_exists_yet(monkey
     assert (installation_id, repo, pr_number) == (1, "acme/widgets", 42)
     assert MARKER in body
     assert "@org/team-a" in body
+    assert gif_provider.url in body
+    assert gif_provider.calls == [BudgetSeverity.WARN]
 
 
 def test_updates_the_existing_comment_when_still_shrinking(monkeypatch):
-    comment_client = _wire(monkeypatch, shrinking=[_shrinking_status()], existing_comment_id=999)
+    comment_client, gif_provider = _wire(
+        monkeypatch, shrinking=[_shrinking_status()], existing_comment_id=999
+    )
 
     task_module.evaluate_pr_budget(_payload())
 
@@ -83,10 +104,21 @@ def test_updates_the_existing_comment_when_still_shrinking(monkeypatch):
     installation_id, repo, comment_id, body = comment_client.updated[0]
     assert (installation_id, repo, comment_id) == (1, "acme/widgets", 999)
     assert "@org/team-a" in body
+    assert gif_provider.url in body
+
+
+def test_uses_the_breach_severity_gif_when_an_owner_has_fully_consumed_its_budget(monkeypatch):
+    _comment_client, gif_provider = _wire(
+        monkeypatch, shrinking=[_shrinking_status(remaining_pct=0.0)], existing_comment_id=None
+    )
+
+    task_module.evaluate_pr_budget(_payload())
+
+    assert gif_provider.calls == [BudgetSeverity.BREACH]
 
 
 def test_updates_the_existing_comment_to_recovered_when_no_longer_shrinking(monkeypatch):
-    comment_client = _wire(monkeypatch, shrinking=[], existing_comment_id=999)
+    comment_client, gif_provider = _wire(monkeypatch, shrinking=[], existing_comment_id=999)
 
     task_module.evaluate_pr_budget(_payload())
 
@@ -95,15 +127,17 @@ def test_updates_the_existing_comment_to_recovered_when_no_longer_shrinking(monk
     _, _, comment_id, body = comment_client.updated[0]
     assert comment_id == 999
     assert "recovered" in body.lower()
+    assert gif_provider.calls == []
 
 
 def test_does_nothing_when_healthy_and_no_existing_comment(monkeypatch):
-    comment_client = _wire(monkeypatch, shrinking=[], existing_comment_id=None)
+    comment_client, gif_provider = _wire(monkeypatch, shrinking=[], existing_comment_id=None)
 
     task_module.evaluate_pr_budget(_payload())
 
     assert comment_client.created == []
     assert comment_client.updated == []
+    assert gif_provider.calls == []
 
 
 def test_malformed_payload_is_dropped_without_error():

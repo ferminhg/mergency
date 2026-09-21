@@ -136,3 +136,17 @@ def test_get_commit_range_provider_is_cached_and_resettable(monkeypatch):
 
     deps.reset_dependency_caches()
     assert deps.get_commit_range_provider() is not first
+
+
+def test_get_gif_provider_is_cached_and_resettable(monkeypatch):
+    from mergency.adapters.giphy.giphy_client import GiphyClient
+
+    _set_required_env(monkeypatch, "test-app-id")
+    monkeypatch.setenv("MERGENCY_GIPHY_API_KEY", "test-giphy-key")
+
+    first = deps.get_gif_provider()
+    assert deps.get_gif_provider() is first
+    assert isinstance(first, GiphyClient)
+
+    deps.reset_dependency_caches()
+    assert deps.get_gif_provider() is not first

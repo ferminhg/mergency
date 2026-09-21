@@ -4,6 +4,7 @@ import logging
 from mergency.adapters.github.pull_request_signal_parser import parse_pull_request_signal
 from mergency.api.deps import (
     get_config_resolver,
+    get_gif_provider,
     get_pr_budget_evaluator,
     get_pr_comment_client,
     get_pull_request_files_provider,
@@ -13,6 +14,7 @@ from mergency.domain.pr_comment_formatter import (
     format_recovered_comment,
     format_shrinking_budget_comment,
 )
+from mergency.domain.severity_resolver import worst_severity
 from mergency.worker.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
@@ -50,7 +52,8 @@ async def _evaluate_and_comment(signal: PullRequestSignal) -> None:
     )
 
     if shrinking:
-        body = format_shrinking_budget_comment(shrinking)
+        gif_url = await get_gif_provider().gif_for_severity(worst_severity(shrinking))
+        body = format_shrinking_budget_comment(shrinking, gif_url)
         if existing_comment_id is not None:
             await comment_client.update_comment(
                 signal.installation_id, signal.repo, existing_comment_id, body

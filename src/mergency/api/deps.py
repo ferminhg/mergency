@@ -3,6 +3,7 @@ from functools import lru_cache
 from mergency.adapters.db.activity_event_repository import SqlAlchemyActivityEventRepository
 from mergency.adapters.db.engine import build_engine
 from mergency.adapters.db.tenant_config_repository import SqlAlchemyTenantConfigRepository
+from mergency.adapters.giphy.giphy_client import GiphyClient
 from mergency.adapters.github.changed_files_provider import GithubChangedFilesProvider
 from mergency.adapters.github.codeowners_provider import GithubCodeownersProvider
 from mergency.adapters.github.commit_range_provider import GithubCommitRangeProvider
@@ -23,6 +24,7 @@ from mergency.domain.ports.activity_event_repository import ActivityEventReposit
 from mergency.domain.ports.changed_files_provider import ChangedFilesProvider
 from mergency.domain.ports.codeowners_provider import CodeownersProvider
 from mergency.domain.ports.commit_range_provider import CommitRangeProvider
+from mergency.domain.ports.gif_provider import GifProvider
 from mergency.domain.ports.installation_token_provider import InstallationTokenProvider
 from mergency.domain.ports.pr_comment_client import PrCommentClient
 from mergency.domain.ports.pull_request_files_provider import PullRequestFilesProvider
@@ -136,6 +138,11 @@ def get_pr_budget_evaluator() -> PrBudgetEvaluator:
     return PrBudgetEvaluator(get_ownership_resolver(), get_budget_calculator())
 
 
+@lru_cache
+def get_gif_provider() -> GifProvider:
+    return GiphyClient(get_settings().giphy_api_key)
+
+
 def reset_dependency_caches() -> None:
     get_settings.cache_clear()
     get_tenant_repository.cache_clear()
@@ -157,3 +164,4 @@ def reset_dependency_caches() -> None:
     get_pull_request_files_provider.cache_clear()
     get_pr_comment_client.cache_clear()
     get_pr_budget_evaluator.cache_clear()
+    get_gif_provider.cache_clear()
